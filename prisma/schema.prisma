@@ -6,49 +6,55 @@ datasource db {
   provider = "postgresql"
 }
 
-/* ======================
-   USER MODEL
-====================== */
+/**
+ * ======================
+ * USER MODEL
+ * ======================
+ */
 model User {
-  id            String    @id @default(uuid())
+  id            String         @id @default(uuid())
   name          String?
-  email         String    @unique
+  email         String         @unique
   emailVerified DateTime?
-  password      String?   // null for Google users
+  password      String? // null for Google users
   image         String?
-  role          Role      @default(USER)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
+  role          Role           @default(USER)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  organizations Organization[]
   accounts      Account[]
   sessions      Session[]
 }
 
-/* ======================
-   OAUTH ACCOUNTS
-====================== */
+/**
+ * ======================
+ * OAUTH ACCOUNTS
+ * ======================
+ */
 model Account {
-  id                 String   @id @default(uuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?
-  access_token       String?
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?
-  session_state      String?
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
 
-/* ======================
-   SESSIONS
-====================== */
+/**
+ * ======================
+ * SESSIONS
+ * ======================
+ */
 model Session {
   id           String   @id @default(uuid())
   sessionToken String   @unique
@@ -58,9 +64,11 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-/* ======================
-   EMAIL VERIFICATION / RESET
-====================== */
+/**
+ * ======================
+ * EMAIL VERIFICATION / RESET
+ * ======================
+ */
 model VerificationToken {
   identifier String
   token      String   @unique
@@ -69,9 +77,82 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-/* ======================
-   USER ROLES
-====================== */
+model Organization {
+  id              String   @id @default(cuid())
+  name            String
+  industry        String
+  companySize     String
+  country         String   @default("UAE")
+  handlesPII      Boolean  @default(false)
+  handlesPayments Boolean  @default(false)
+
+  ownerId         String   @unique
+  owner           User     @relation(fields: [ownerId], references: [id])
+
+  createdAt       DateTime @default(now())
+
+  complianceScore Float    @default(0)
+  riskLevel       String   @default("Unknown")
+  openGaps        Int      @default(0)
+}
+
+
+
+model Assessment {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  status         String   @default("IN_PROGRESS") // IN_PROGRESS | COMPLETED
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  questions      Question[]
+}
+
+model Question {
+  id           String  @id @default(cuid())
+  assessmentId String
+  assessment   Assessment @relation(fields: [assessmentId], references: [id])
+
+  text         String
+  category     String
+  weight       Int     @default(1)
+
+  answers      Answer[]
+}
+
+model Answer {
+  id         String  @id @default(cuid())
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id])
+
+  value      String  // YES / NO / PARTIAL
+  notes      String?
+}
+
+
+model Report {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  assessmentId   String   @unique
+
+  score          Int
+  riskLevel      String
+  openGaps       Int
+
+  summary        String
+  keyFindings    String
+  recommendations String
+
+  createdAt      DateTime @default(now())
+}
+
+/**
+ * ======================
+ * USER ROLES
+ * ======================
+ */
 enum Role {
   USER
   ADMIN
