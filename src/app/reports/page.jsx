@@ -27,35 +27,35 @@ export default function ReportsPage() {
   }, []);
 
   if (loading) {
-    return(
+    return (
       <main className="max-w-4xl mx-auto px-6 py-10">
-      {/* Header skeleton */}
-      <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 animate-pulse">
-        <div className="space-y-2">
-          <div className="h-6 w-56 bg-gray-200 rounded" />
-          <div className="h-4 w-40 bg-gray-200 rounded" />
-        </div>
-
-        <div className="flex gap-3">
-          <div className="h-10 w-28 bg-gray-200 rounded" />
-          <div className="h-10 w-40 bg-gray-200 rounded" />
-        </div>
-      </div>
-
-      {/* Stats skeleton */}
-      <div className="grid md:grid-cols-3 gap-5 mt-8">
-        {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="border rounded-xl bg-white p-6 animate-pulse"
-          >
-            <div className="h-4 w-32 bg-gray-200 rounded" />
-            <div className="h-8 w-20 bg-gray-200 rounded mt-4" />
+        {/* Header skeleton */}
+        <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 animate-pulse">
+          <div className="space-y-2">
+            <div className="h-6 w-56 bg-gray-200 rounded" />
+            <div className="h-4 w-40 bg-gray-200 rounded" />
           </div>
-        ))}
-      </div>
 
-      {/* Sections skeleton */}
+          <div className="flex gap-3">
+            <div className="h-10 w-28 bg-gray-200 rounded" />
+            <div className="h-10 w-40 bg-gray-200 rounded" />
+          </div>
+        </div>
+
+        {/* Stats skeleton */}
+        <div className="grid md:grid-cols-3 gap-5 mt-8">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="border rounded-xl bg-white p-6 animate-pulse"
+            >
+              <div className="h-4 w-32 bg-gray-200 rounded" />
+              <div className="h-8 w-20 bg-gray-200 rounded mt-4" />
+            </div>
+          ))}
+        </div>
+
+        {/* Sections skeleton */}
         <section className="mt-10 animate-pulse">
           <div className="h-5 w-40 bg-gray-200 rounded" />
 
@@ -67,13 +67,13 @@ export default function ReportsPage() {
           </div>
         </section>
 
-      {/* Subtle loader */}
-      <div className="mt-10 flex items-center justify-center gap-2 text-sm text-gray-500">
-        <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-black" />
-        Generating your compliance report...
-      </div>
-    </main>
-    )
+        {/* Subtle loader */}
+        <div className="mt-10 flex items-center justify-center gap-2 text-sm text-gray-500">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-black" />
+          Generating your compliance report...
+        </div>
+      </main>
+    );
   }
 
   if (!report) {
@@ -118,6 +118,30 @@ export default function ReportsPage() {
           >
             Run New Assessment
           </Link>
+          <button
+            onClick={async () => {
+              const res = await fetch("/api/report/pdf");
+              if (!res.ok) {
+                toast.error("Failed to generate PDF");
+                return;
+              }
+
+              const blob = await res.blob();
+              const url = window.URL.createObjectURL(blob);
+
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "Qubey_Compliance_Report.pdf";
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+
+              window.URL.revokeObjectURL(url);
+            }}
+            className="border px-3 py-2 rounded"
+          >
+            Download PDF
+          </button>
         </div>
       </div>
 
@@ -131,10 +155,7 @@ export default function ReportsPage() {
       {/* Sections */}
       <ReportSection title="Summary" content={report.summary} />
       <ReportSection title="Key Findings" content={report.keyFindings} />
-      <ReportSection
-        title="Recommendations"
-        content={report.recommendations}
-      />
+      <ReportSection title="Recommendations" content={report.recommendations} />
     </main>
   );
 }
