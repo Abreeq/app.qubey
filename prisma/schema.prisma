@@ -86,10 +86,13 @@ model Organization {
   handlesPII      Boolean  @default(false)
   handlesPayments Boolean  @default(false)
 
+  profileVersion Int @default(1)
+
   ownerId         String   @unique
   owner           User     @relation(fields: [ownerId], references: [id])
 
   createdAt       DateTime @default(now())
+  updatedAt DateTime? @updatedAt
 
   complianceScore Float    @default(0)
   riskLevel       String   @default("Unknown")
