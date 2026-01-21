@@ -26,7 +26,41 @@ export default function ReportsHistoryPage() {
     load();
   }, []);
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <main className="max-w-5xl mx-auto px-6 py-10">
+      {/* Header skeleton */}
+      <div className="flex justify-between items-center animate-pulse">
+        <div className="h-6 w-48 bg-gray-200 rounded" />
+        <div className="h-4 w-32 bg-gray-200 rounded" />
+      </div>
+
+      {/* List skeleton */}
+      <div className="mt-6 space-y-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="border bg-white rounded-xl p-6 flex flex-col md:flex-row justify-between md:items-center gap-4 animate-pulse"
+          >
+            <div className="space-y-2 w-full">
+              <div className="h-4 w-40 bg-gray-200 rounded" />
+              <div className="h-5 w-72 bg-gray-200 rounded" />
+              <div className="h-4 w-32 bg-gray-200 rounded" />
+            </div>
+
+            <div className="h-9 w-28 bg-gray-200 rounded" />
+          </div>
+        ))}
+      </div>
+
+      {/* Subtle loader */}
+      <div className="mt-8 flex items-center justify-center gap-2 text-sm text-gray-500">
+        <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-black" />
+        Loading report history...
+      </div>
+    </main>
+    )
+  }
 
   return (
     <main className="max-w-5xl mx-auto px-6 py-10">
