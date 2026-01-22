@@ -112,7 +112,7 @@ export async function POST(req) {
       .filter((x) => x.answer === "NO" || x.answer === "UNANSWERED");
 
     const prompt = `
-You are a cybersecurity compliance auditor.
+You are a cybersecurity compliance expert with deep knowledge of UAE regulations, including PDPL, ISO 27001, NESA basic controls, and local industry best practices.
 Generate a compliance report for a business based on assessment results.
 
 Return ONLY JSON:
@@ -139,7 +139,7 @@ ${JSON.stringify(weakQuestions, null, 2)}
 
     try {
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-2.5-flash",
         contents: prompt,
       });
 
