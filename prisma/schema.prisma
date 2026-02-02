@@ -97,6 +97,10 @@ model Organization {
   complianceScore Float    @default(0)
   riskLevel       String   @default("Unknown")
   openGaps        Int      @default(0)
+
+  snapshot ComplianceSnapshot?
+  risks Risk[]
+  actions ComplianceAction[]
 }
 
 
@@ -106,6 +110,8 @@ model Assessment {
   userId         String
   organizationId String
   status         String   @default("IN_PROGRESS") // IN_PROGRESS | COMPLETED
+  profileVersion Int      @default(1)
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -150,6 +156,58 @@ model Report {
 
   createdAt      DateTime @default(now())
 }
+
+model ComplianceSnapshot {
+  id               String   @id @default(cuid())
+  organizationId   String   @unique
+
+  readinessScore   Int
+  riskLevel        String
+
+  highRiskCount    Int @default(0)
+  actionsPending  Int @default(0)
+  actionsCompleted Int @default(0)
+  scoreImprovement Int @default(0)
+
+  lastAssessmentAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+}
+
+model Risk {
+  id             String @id @default(cuid())
+  organizationId String
+
+  title          String
+  severity       String // HIGH | MEDIUM | LOW
+  status         String // OPEN | FIXED
+
+  createdAt DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+}
+
+model ComplianceAction {
+  id              String @id @default(cuid())
+  organizationId  String
+
+  title           String
+  description     String
+
+  remediationSteps String? // long text or markdown
+
+  expectedIncrease Int
+
+  status String // PENDING | IN_PROGRESS | COMPLETED
+
+  createdAt DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+}
+
 
 /**
  * ======================

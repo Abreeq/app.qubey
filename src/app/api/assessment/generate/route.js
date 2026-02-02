@@ -12,10 +12,12 @@ function extractJSON(text) {
   return JSON.parse(text.replace(/```json/g, "").replace(/```/g, "").trim());
 }
 
-export async function POST() {
+export async function POST(req) {
   const session = await getServerSession(authOptions);
   if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
-
+  
+  const { forceNew } = await req.json().catch(() => ({}));
+  
   const org = await prisma.organization.findUnique({
     where: { ownerId: session.user.id },
   });
@@ -24,11 +26,42 @@ export async function POST() {
     return Response.json({ error: "Organization not found" }, { status: 400 });
   }
 
+  // ✅ If user has in-progress assessment, resume
+  if (!forceNew) {
+    const existing = await prisma.assessment.findFirst({
+      where: {
+        userId: session.user.id,
+        organizationId: org.id,
+        status: "IN_PROGRESS",
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (existing) {
+      return Response.json({
+        success: true,
+        resumed: true,
+        assessmentId: existing.id,
+      });
+    }
+  }
+
+   if (forceNew) {
+    await prisma.assessment.updateMany({
+      where: {
+        userId: session.user.id,
+        organizationId: org.id,
+        status: "IN_PROGRESS",
+      },
+      data: { status: "CANCELLED" },
+    });
+  }
   // create assessment
   const assessment = await prisma.assessment.create({
     data: {
       userId: session.user.id,
       organizationId: org.id,
+      profileVersion: org.profileVersion || 1,
     },
   });
 
@@ -87,7 +120,7 @@ Instructions:
       })),
     });
 
-    return Response.json({ success: true, assessmentId: assessment.id });
+    return Response.json({ success: true, resumed: false, assessmentId: assessment.id });
   } catch (err) {
     console.error(err);
     return Response.json(
