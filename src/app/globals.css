@@ -1,2 +1,46 @@
 @import "tailwindcss";
 
+@layer base {
+  :root {
+    /* Brand Colors */
+    --dark-purple: 68, 24, 81;   /* #441851 */
+    --light-purple: 118, 27, 230;   /*  #761be6 */
+    --brand-black: 22 6 2;
+    --brand-white: 255 255 255;
+
+    /* Fonts (from next/font) */
+    --font-body: var(--font-montserrat);
+    --font-heading: var(--font-nata-sans);
+  }
+
+  @theme inline {
+    --font-sans: var(--font-body);
+    --font-heading: var(--font-heading);
+  }
+
+  body {
+     font-family: var(--font-montserrat), system-ui, sans-serif;
+     @apply bg-[#F3F4F6] text-[rgb(var(--brand-black))] overflow-x-hidden;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-nata-sans), system-ui, sans-serif;
+    @apply font-bold text-[rgb(var(--brand-black))];
+  }
+
+  p {
+    @apply leading-relaxed;
+  }
+}
+
+@layer components {
+  .custom-container {
+    max-width: 1400px;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+}
