@@ -182,6 +182,80 @@ ${JSON.stringify(weakQuestions, null, 2)}
       },
     });
 
+    // Example risk generation (simple logic for V0)
+
+const risks = [];
+
+for (const q of assessment.questions) {
+  const answer = q.answers[0]?.value;
+
+  if (answer === "NO") {
+    risks.push({
+      organizationId: assessment.organizationId,
+      title: q.text,
+      severity: "HIGH",
+      status: "OPEN",
+    });
+  }
+
+  if (answer === "PARTIAL") {
+    risks.push({
+      organizationId: assessment.organizationId,
+      title: q.text,
+      severity: "MEDIUM",
+      status: "OPEN",
+    });
+  }
+}
+
+if (risks.length) {
+  await prisma.risk.createMany({ data: risks });
+}
+
+// --------------------
+// Create actions (simple mapping for now)
+
+const actions = risks.slice(0, 5).map((r) => ({
+  organizationId: assessment.organizationId,
+  title: `Fix: ${r.title}`,
+  description: "Implement required control to close this gap",
+  expectedIncrease: 5,
+  status: "PENDING",
+}));
+
+if (actions.length) {
+  await prisma.complianceAction.createMany({ data: actions });
+}
+
+// --------------------
+// Create or update snapshot
+
+const highRiskCount = risks.filter(r => r.severity === "HIGH").length;
+
+await prisma.complianceSnapshot.upsert({
+  where: { organizationId: assessment.organizationId },
+  update: {
+    readinessScore: score,
+    riskLevel,
+    highRiskCount,
+    documentsCount: 0,
+    actionsCompleted: 0,
+    scoreImprovement: 0,
+    lastAssessmentAt: new Date(),
+  },
+  create: {
+    organizationId: assessment.organizationId,
+    readinessScore: score,
+    riskLevel,
+    highRiskCount,
+    documentsCount: 0,
+    actionsCompleted: 0,
+    scoreImprovement: 0,
+    lastAssessmentAt: new Date(),
+  },
+});
+
+
     return Response.json({
       success: true,
       score,

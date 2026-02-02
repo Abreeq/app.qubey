@@ -1,107 +1,211 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth"; // ✅ IMPORTANT: use lib/auth
-import { redirect } from "next/navigation";
-import prisma from "@/lib/prisma";
+"use client";
 
-export default async function DashboardPage() {
-  const session = await getServerSession(authOptions);
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-  if (!session) redirect("/auth");
+export default function DashboardPage() {
+  const router = useRouter();
 
-  if (!session.user.emailVerified) {
-    redirect("/profile?verifyRequired=true");
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch("/api/dashboard");
+        const json = await res.json();
+        if (!res.ok) {
+          router.push("/organisation/create");
+          return;
+        }
+
+        setData(json);
+        setLoading(false);
+      } catch {
+        router.push("/organisation/create");
+      }
+    };
+
+    load();
+  }, [router]);
+
+  if (loading) {
+    return (
+      <main className="max-w-7xl mx-auto px-6 py-12 animate-pulse space-y-6">
+        <div className="h-8 w-72 bg-gray-200 rounded" />
+        <div className="h-32 bg-gray-200 rounded-xl" />
+        <div className="grid md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-24 bg-gray-200 rounded-xl" />
+          ))}
+        </div>
+      </main>
+    );
   }
 
-  // ✅ Check if organization exists
-  const org = await prisma.organization.findUnique({
-    where: {
-      ownerId: session.user.id,
-    },
-  });
-
-  // ✅ If no organization → force user to create
-  if (!org) {
-    redirect("/organisation/create");
-  }
+  const {
+    readinessScore,
+    riskLevel,
+    lastAssessmentAt,
+    stats,
+    nextAction,
+  } = data;
 
   return (
-    <main className="max-w-7xl mx-auto px-6 py-10">
-      <h1 className="text-2xl font-semibold">
-        Welcome back, {session.user.name || "User"}
-      </h1>
+    <main className="max-w-7xl mx-auto px-6 py-12 space-y-10">
 
-      <p className="mt-2 text-gray-600">
-        Organization: <span className="font-medium">{org.name}</span>
-      </p>
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-semibold">
+          Compliance Readiness Dashboard
+        </h1>
+        <p className="text-sm text-gray-500">
+          Your current compliance status at a glance
+        </p>
+      </div>
 
-      {/* REAL STATUS CARDS */}
-      <div className="grid md:grid-cols-3 gap-6 mt-8">
-        <DashboardCard
-          title="Compliance Score"
-          value={`${org.complianceScore}%`}
-          subtitle="Based on your current assessment"
+      {/* Overall Score */}
+      <div className="border rounded-xl bg-white p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
+
+        <div>
+          <p className="text-sm text-gray-500">Overall Readiness Score</p>
+          <div className="flex items-end gap-2 mt-2">
+            <span className="text-4xl font-semibold">{readinessScore}</span>
+            <span className="text-gray-400">/100</span>
+          </div>
+
+          <span className="inline-block mt-3 px-3 py-1 text-xs rounded bg-yellow-100 text-yellow-700">
+            {riskLevel}
+          </span>
+          {riskLevel === "Not started" && (
+            <span className="inline-block mt-3 ml-2 px-3 py-1 text-xs rounded bg-gray-100 text-gray-700">
+              Take your first assessment to get started 
+              <button
+                onClick={() => router.push("/assessment")}
+                className="ml-1 bg-blue-500 text-white px-3 py-1 rounded text-xs hover:bg-blue-600 transition">
+                Start Assessment
+              </button>
+            </span>
+          )}
+        </div>
+
+        <div className="text-sm text-gray-500 space-y-1">
+          <p>
+            Last assessment:{" "}
+            {lastAssessmentAt
+              ? new Date(lastAssessmentAt).toLocaleDateString()
+              : "Not yet"}
+          </p>
+          {nextAction && (
+            <p>
+              Next recommended action:{" "}
+              <span className="font-medium text-black">
+                {nextAction.title}
+              </span>
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid md:grid-cols-4 gap-4">
+        <StatCard
+          title="High Priority Risks"
+          value={stats.highRisks}
         />
-
-        <DashboardCard
-          title="Risk Level"
-          value={org.riskLevel}
-          subtitle="Calculated from gaps & controls"
+        <StatCard
+          title="Actions Pending"
+          value={stats.actionsPending}
         />
-
-        <DashboardCard
-          title="Open Gaps"
-          value={`${org.openGaps}`}
-          subtitle="Controls missing"
+        <StatCard
+          title="Actions Completed"
+          value={stats.actionsCompleted}
+        />
+        <StatCard
+          title="Score Improvement"
+          value={`+${stats.scoreImprovement}`}
         />
       </div>
 
-      {/* REAL ACTIONS (later dynamic) */}
-      <section className="mt-12">
-        <h2 className="text-xl font-semibold">Recommended Actions</h2>
+      {/* Next Action */}
+      {nextAction && (
+        <div className="border rounded-xl bg-purple-50 p-6 space-y-3">
+          <p className="text-sm font-medium text-purple-700">
+            Next Recommended Action
+          </p>
 
-        <div className="mt-4 space-y-4">
-          <ActionItem
-            title="Start / Continue Assessment"
-            desc="Answer compliance questions to update your score."
-            href="/assessment"
-          />
-          <ActionItem
-            title="View Risk Report"
-            desc="See why your risk is high and what to fix first."
-            href="/reports"
-          />
-          <ActionItem
-            title="Manage Organization"
-            desc="Update company profile and compliance scope."
-            href="/organisation"
-          />
+          <p className="text-gray-700">
+            {nextAction.title} – this could improve your score by approximately{" "}
+            <b>{nextAction.expectedIncrease} points</b>.
+          </p>
+
+          <button
+  onClick={() => router.push(`/actions/${nextAction.id}`)}
+  className="bg-purple-600 text-white px-4 py-2 rounded hover:scale-95 transition"
+>
+  View Action
+</button>
         </div>
+      )}
+
+      {/* Understanding Your Score */}
+      <section className="space-y-5">
+
+        <h2 className="text-lg font-semibold">
+          Understanding Your Score
+        </h2>
+
+        <InfoBox title="What Your Score Means" color="purple">
+          <ul className="list-disc pl-5 space-y-1">
+            <li>0–40: Needs immediate attention</li>
+            <li>41–70: Progressing – building foundation</li>
+            <li>71–100: Strong readiness</li>
+          </ul>
+        </InfoBox>
+
+        <InfoBox title="What Your Score Does NOT Mean" color="gray">
+          <ul className="list-disc pl-5 space-y-1">
+            <li>Not a certification or audit result</li>
+            <li>Does not guarantee regulatory approval</li>
+            <li>Not a substitute for legal advice</li>
+            <li>Does not mean you’re immune to incidents</li>
+          </ul>
+        </InfoBox>
+
+        <InfoBox title="Why Scores Change Over Time" color="green">
+          <ul className="list-disc pl-5 space-y-1">
+            <li>Completing actions improves score</li>
+            <li>New risks may reduce score</li>
+            <li>Reassessments keep data current</li>
+          </ul>
+        </InfoBox>
       </section>
     </main>
   );
 }
 
-function DashboardCard({ title, value, subtitle }) {
+/* ------------------ Components ------------------ */
+
+function StatCard({ title, value }) {
   return (
-    <div className="border rounded-xl p-6 bg-white">
+    <div className="border rounded-xl bg-white p-5">
       <p className="text-sm text-gray-500">{title}</p>
-      <p className="text-3xl font-semibold mt-2">{value}</p>
-      <p className="text-sm text-gray-400 mt-1">{subtitle}</p>
+      <p className="text-2xl font-semibold mt-2">{value}</p>
     </div>
   );
 }
 
-function ActionItem({ title, desc, href }) {
+function InfoBox({ title, color, children }) {
+  const colors = {
+    purple: "bg-purple-50 border-purple-200",
+    gray: "bg-gray-50 border-gray-200",
+    green: "bg-green-50 border-green-200",
+  };
+
   return (
-    <a
-      href={href}
-      className="border rounded-lg p-4 flex justify-between items-center hover:bg-gray-50 transition"
-    >
-      <div>
-        <p className="font-medium">{title}</p>
-        <p className="text-sm text-gray-600">{desc}</p>
-      </div>
-      <span className="text-sm underline">Open</span>
-    </a>
+    <div className={`border rounded-xl p-5 ${colors[color]}`}>
+      <p className="font-medium mb-2">{title}</p>
+      <div className="text-sm text-gray-700">{children}</div>
+    </div>
   );
 }

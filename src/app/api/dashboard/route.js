@@ -1,0 +1,66 @@
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import prisma from "@/lib/prisma";
+
+export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const org = await prisma.organization.findFirst({
+    where: { ownerId: session.user.id },
+  });
+
+  if (!org) {
+    return Response.json({ error: "Organization not found" }, { status: 404 });
+  }
+
+  const snapshot = await prisma.complianceSnapshot.findUnique({
+    where: { organizationId: org.id },
+  });
+
+  if (!snapshot) {
+    return Response.json({
+      readinessScore: 0,
+      riskLevel: "Not started",
+      lastAssessmentAt: null,
+      stats: {
+        highRisks: 0,
+        actionsPending: 0,
+        actionsCompleted: 0,
+        scoreImprovement: 0,
+      },
+      nextAction: null,
+    });
+  }
+
+  const nextAction = await prisma.complianceAction.findFirst({
+    where: {
+      organizationId: org.id,
+      OR : [{ status: "PENDING" }, { status: "IN_PROGRESS" }],
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  return Response.json({
+    readinessScore: snapshot.readinessScore,
+    riskLevel: snapshot.riskLevel,
+    lastAssessmentAt: snapshot.lastAssessmentAt,
+
+    stats: {
+      highRisks: snapshot.highRiskCount,
+      actionsPending: snapshot.actionsPending,
+      actionsCompleted: snapshot.actionsCompleted,
+      scoreImprovement: snapshot.scoreImprovement,
+    },
+
+    nextAction: nextAction
+      ? {
+          id: nextAction.id,
+          title: nextAction.title,
+          expectedIncrease: nextAction.expectedIncrease,
+        }
+      : null,
+  });
+}
