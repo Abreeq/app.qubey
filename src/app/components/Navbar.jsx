@@ -134,7 +134,7 @@ export default function Navbar() {
 
 
             {/* Mobile CTA */}
-            <div className="mt-3 flex flex-col gap-3">
+            <div className="flex flex-col gap-3">
               {
               status === "loading" ? null : session?.user ? (
                 <ProfileDropdown user={session.user} />
