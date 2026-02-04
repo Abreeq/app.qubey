@@ -109,7 +109,7 @@ export async function POST(req) {
           answer,
         };
       })
-      .filter((x) => x.answer === "NO" || x.answer === "UNANSWERED");
+      .filter((x) => x.answer === "NO" || x.answer === "UNANSWERED" || x.answer === "PARTIAL");
 
     const prompt = `
 You are a cybersecurity compliance expert with deep knowledge of UAE regulations, including PDPL, ISO 27001, NESA basic controls, and local industry best practices.
@@ -238,7 +238,7 @@ await prisma.complianceSnapshot.upsert({
     readinessScore: score,
     riskLevel,
     highRiskCount,
-    documentsCount: 0,
+    actionsPending: actions.length,
     actionsCompleted: 0,
     scoreImprovement: 0,
     lastAssessmentAt: new Date(),
@@ -248,7 +248,7 @@ await prisma.complianceSnapshot.upsert({
     readinessScore: score,
     riskLevel,
     highRiskCount,
-    documentsCount: 0,
+    actionsPending: actions.length,
     actionsCompleted: 0,
     scoreImprovement: 0,
     lastAssessmentAt: new Date(),
