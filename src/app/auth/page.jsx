@@ -15,6 +15,8 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [errorMsg, setErrorMsg] = useState({});
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -26,23 +28,65 @@ export default function AuthPage() {
       // Clean URL immediately
       router.replace("/auth");
     }
-  }, [update, router ]);
+  }, [update, router]);
 
   useEffect(() => {
-     if (
-    session?.user?.emailVerified &&
-    !sessionStorage.getItem("emailVerifiedToast")
-  ) {
-    toast.success("Email verified successfully!");
-    sessionStorage.setItem("emailVerifiedToast", "true");
-  }
+    if (
+      session?.user?.emailVerified &&
+      !sessionStorage.getItem("emailVerifiedToast")
+    ) {
+      toast.success("Email verified successfully!");
+      sessionStorage.setItem("emailVerifiedToast", "true");
+    }
   }, [session]);
 
+
+  //  For Validation
+  const conditions = {
+    name: [{ required: true, msg: "Please enter your full name" }, { length: 3, msg: "Name should be greater than 3 Characters" }],
+    email: [{ required: true, msg: "Please enter your email" }, { pattern:/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/ , msg: "Please enter a valid email address" }],
+    password: [{ required: true, msg: "Please enter a password" }, { length: 6, msg: "Password must be at least 6 characters" }],
+  }
+
+  const validate = (data, rules = conditions) => {
+    const errData = {};
+    Object.entries(data).forEach(([key, value]) => {
+      rules[key]?.some((condition) => {
+        if (condition.required && !value) {
+          errData[key] = condition.msg;
+          return true;
+        }
+        if (condition.length && value.length < condition.length) {
+          errData[key] = condition.msg;
+          return true;
+        }
+        if (condition.pattern && !condition.pattern.test(value)) {
+          errData[key] = condition.msg;
+          return true;
+        }
+      });
+    });
+    setErrorMsg(errData);
+    return errData;
+  };
+
+
+  // For Submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      // Determine which fields to validate
+      const validationData = isSignup? { name, email, password } : { email, password };
+      const validatedData = validate(validationData, isSignup? conditions : 
+        { email: conditions.email, password: conditions.password });
+
+      if (Object.keys(validatedData).length) {
+        setLoading(false);
+        return;
+      }
+
       /* =========================
          SIGNUP FLOW
       ========================= */
@@ -56,7 +100,7 @@ export default function AuthPage() {
         const data = await res.json();
 
         if (!res.ok) {
-          toast.error(data.error || "Signup failed");
+          setAuthError(data.error || "Signup failed");
           setLoading(false);
           return;
         }
@@ -82,8 +126,18 @@ export default function AuthPage() {
       toast.success("Logged in successfully");
       window.location.href = "/dashboard";
     } catch (err) {
-      toast.error("Something went wrong. Please try again.");
+      setAuthError("Something went wrong. Please try again.");
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setGoogleLoading(true);
+      await signIn("google", { callbackUrl: "/dashboard" });
+    } catch (err) {
+      setAuthError("Something went wrong with Google login.");
+      setGoogleLoading(false);
     }
   };
 
@@ -95,7 +149,7 @@ export default function AuthPage() {
       <div className="absolute top-[5%] left-[30%] size-160 bg-[#6670CC] rounded-full mix-blend-multiply filter blur-[60px] opacity-30"></div>
 
       {/* --- Glass Card --- */}
-      <div className={`${isSignup? "mt-16":"mt-12"} custom-container relative z-10 w-[88%] sm:w-full max-w-sm sm:max-w-lg bg-white/50 backdrop-blur-2xl rounded-3xl shadow-[0_20px_40px_rgba(118,27,230,0.16)] border border-white/60 p-4 sm:p-6`}>
+      <div className={`${isSignup ? "mt-16" : "mt-12"} custom-container relative z-10 w-[88%] sm:w-full max-w-sm sm:max-w-lg bg-white/50 backdrop-blur-2xl rounded-3xl shadow-[0_20px_40px_rgba(118,27,230,0.16)] border border-white/60 p-4 sm:p-6`}>
 
         {/* Header */}
         <div className="text-center mb-4 sm:mb-6">
@@ -129,9 +183,10 @@ export default function AuthPage() {
                 placeholder="john doe"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-3 sm:px-4 py-1.5 sm:py-2 mt-1 text-sm sm:text-base rounded-4xl bg-white/80 border border-white placeholder-[#441851]/40 focus:bg-white/60 focus:border-[#761be6] focus:ring-1 focus:ring-[#761be6]/10 outline-none transition-all"
-                required
+                onFocus={() => setErrorMsg((prev) => ({ ...prev, name: "" }))}
+                className={`w-full px-3 sm:px-4 py-1.5 sm:py-2 mt-1 text-sm sm:text-base rounded-4xl bg-white/80 border ${errorMsg.name? "border-red-500" : "border-white" } placeholder-[#441851]/40 focus:bg-white/60 focus:border-[#761be6] focus:ring-1 focus:ring-[#761be6]/10 outline-none transition-all`}
               />
+              {errorMsg.name && <p className="text-red-600 text-sm mt-1 -mb-3 ml-2">{errorMsg.name}</p>}   
             </div>
           )}
 
@@ -144,14 +199,15 @@ export default function AuthPage() {
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
-                if(authError) setAuthError("");
+                if (authError) setAuthError("");
               }}
-              className="w-full px-3 sm:px-4 py-1.5 sm:py-2 mt-1 text-sm sm:text-base rounded-4xl bg-white/80 border border-white placeholder-[#441851]/40 focus:bg-white/60 focus:border-[#761be6] focus:ring-1 focus:ring-[#761be6]/10 outline-none transition-all"
-              required
+              onFocus={() => setErrorMsg((prev) => ({ ...prev, email: "" }))}
+              className={`w-full px-3 sm:px-4 py-1.5 sm:py-2 mt-1 text-sm sm:text-base rounded-4xl bg-white/80 border ${errorMsg.email? "border-red-500" : "border-white" } placeholder-[#441851]/40 focus:bg-white/60 focus:border-[#761be6] focus:ring-1 focus:ring-[#761be6]/10 outline-none transition-all`}
             />
+            {errorMsg.email && <p className="text-red-600 text-sm mt-1 -mb-3 ml-2">{errorMsg.email}</p>}
           </div>
 
-           {/* Password */}
+          {/* Password */}
           <div>
             <label className="text-sm sm:text-base font-medium ml-2 sm:ml-1">Password</label>
             <input
@@ -160,16 +216,16 @@ export default function AuthPage() {
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
-                if(authError) setAuthError("");
+                if (authError) setAuthError("");
               }}
-              minLength={6}
-              className="w-full px-3 sm:px-4 py-1.5 sm:py-2 mt-1 text-sm sm:text-base rounded-4xl bg-white/80 border border-white placeholder-[#441851]/40 focus:bg-white/60 focus:border-[#761be6] focus:ring-1 focus:ring-[#761be6]/10 outline-none transition-all"
-              required
+              onFocus={() => setErrorMsg((prev) => ({ ...prev, password: "" }))}
+              className={`w-full px-3 sm:px-4 py-1.5 sm:py-2 mt-1 text-sm sm:text-base rounded-4xl bg-white/80 border ${errorMsg.password? "border-red-500" : "border-white" } placeholder-[#441851]/40 focus:bg-white/60 focus:border-[#761be6] focus:ring-1 focus:ring-[#761be6]/10 outline-none transition-all`}
             />
+            {errorMsg.password && <p className="text-red-600 text-sm mt-1 mb-0 sm:-mb-3 ml-2">{errorMsg.password}</p>}
           </div>
 
           {/* Submit Button */}
-          <button disabled={loading}
+          <button disabled={loading || googleLoading}
             className="disabled:opacity-60 w-full py-2 sm:py-2.5 rounded-4xl cursor-pointer bg-linear-to-r from-[#441851] to-[#761be6] hover:from-[#5e1dbf] hover:to-[#8b2bf0] text-white font-semibold mt-2 transition-colors">
             {loading ? "Please wait..." : isSignup ? "Sign Up" : "Sign In"}
           </button>
@@ -184,8 +240,8 @@ export default function AuthPage() {
         </div>
 
         {/* Google Button */}
-        <button onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
-          className="cursor-pointer w-full py-2 sm:py-2.5 rounded-4xl bg-white/80 border border-white hover:bg-white/60 font-medium flex items-center justify-center gap-3 transition-all group">
+        <button disabled={loading || googleLoading} onClick={handleGoogleSignIn}
+          className="disabled:bg-white/30 cursor-pointer w-full py-2 sm:py-2.5 rounded-4xl bg-white/80 shadow-md border border-white hover:bg-white/60 font-medium flex items-center justify-center gap-3 transition-all group">
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -204,17 +260,20 @@ export default function AuthPage() {
               fill="#EA4335"
             />
           </svg>
-          <span className="text-sm sm:text-base group-hover:text-[#761be6] transition-colors">Continue with Google</span>
+          <span className="text-sm sm:text-base group-hover:text-[#761be6] transition-colors">
+            {googleLoading ? "Please wait..." : "Continue with Google"}
+          </span>
         </button>
 
         {/* Footer Login Link */}
         <p className="text-center text-sm text-[#441851]/80 mt-3">
-          {isSignup ? "Already have an account?" : "Don’t have an account?"} 
+          {isSignup ? "Already have an account?" : "Don’t have an account?"}
           <button type="button"
             className="cursor-pointer font-bold text-[#761be6] ml-1 hover:underline"
             onClick={() => {
               setIsSignup(!isSignup);
               setAuthError("");
+              setErrorMsg({})
             }}
           >
             {isSignup ? "Sign In" : "Sign Up"}
