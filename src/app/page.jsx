@@ -1,6 +1,27 @@
+"use client";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function Home() {
+  const router = useRouter();
+  useEffect(() => {
+    router.push("/dashboard");
+  }, [router]);
+  const options = [
+              {
+                title: "AI Compliance Assessment",
+                desc: "Answer simple questions and instantly know where you stand against UAE regulations.",
+              },
+              {
+                title: "Gap Analysis & Risk Scoring",
+                desc: "Identify missing controls and understand your cybersecurity risk clearly.",
+              },
+              {
+                title: "Auto Documentation",
+                desc: "Generate policies, reports, and compliance documents in minutes.",
+              },
+            ]
   return (
  <main className="bg-white">
       {/* HERO */}
@@ -49,20 +70,7 @@ export default function Home() {
           </h2>
 
           <div className="grid md:grid-cols-3 gap-8 mt-12">
-            {[
-              {
-                title: "AI Compliance Assessment",
-                desc: "Answer simple questions and instantly know where you stand against UAE regulations.",
-              },
-              {
-                title: "Gap Analysis & Risk Scoring",
-                desc: "Identify missing controls and understand your cybersecurity risk clearly.",
-              },
-              {
-                title: "Auto Documentation",
-                desc: "Generate policies, reports, and compliance documents in minutes.",
-              },
-            ].map((f) => (
+            {options.map((f) => (
               <div
                 key={f.title}
                 className="bg-white p-6 rounded-xl shadow-sm"

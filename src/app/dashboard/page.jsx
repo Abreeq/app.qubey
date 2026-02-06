@@ -1,5 +1,4 @@
 "use client"
-
 import { FaCirclePlus, FaCalendarDays, FaCheck } from "react-icons/fa6";
 import { MdOutlineFileDownload } from "react-icons/md";
 import {
@@ -7,7 +6,6 @@ import {
   FaBan, FaTimesCircle, FaSyncAlt, FaHistory, FaPlay,
 } from "react-icons/fa";
 import { TbTargetArrow } from "react-icons/tb";
-
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -27,15 +25,28 @@ export default function DashboardPage() {
       try {
         const res = await fetch("/api/dashboard");
         const json = await res.json();
-        if (!res.ok) {
+        if (res.status === 401) {
+          router.push("/auth");
+          return;
+        }
+        if (res.status === 403) {
+          router.push("/profile");
+          return;
+        }
+
+        if(res.status === 404) {
+          if(json.error === "Organization not found") {
           router.push("/organisation/create");
+          }
+          router.push("/auth");
           return;
         }
 
         setData(json);
         setLoading(false);
-      } catch {
-        router.push("/organisation/create");
+      } catch (error) {
+        console.error(error);
+        router.push("/auth");
       }
     };
 

@@ -10,6 +10,7 @@ const nataSans = Nata_Sans({
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
   variable: "--font-nata-sans",
   display: "swap",
+  fallback: ["sans-serif"],
 });
 
 const montserrat = Montserrat({
@@ -38,4 +39,4 @@ export default function RootLayout({ children }) {
       </body>
     </html>
   );
-}
+};
