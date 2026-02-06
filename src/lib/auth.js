@@ -76,6 +76,25 @@ export const authOptions = {
         token.id = user.id;
         token.role = user.role;
         token.emailVerified = user.emailVerified;
+
+        // Fetch all organizations the user belongs to (assuming it's a relation in Prisma)
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: {
+            organizations: {
+              select: {
+                name: true,  // Get the organization names
+              },
+            },
+          },
+        });
+
+        // If the user belongs to any organizations, attach the list of organization names to the token
+        if (dbUser?.organizations) {
+          token.organizations = dbUser.organizations.map(org => org.name); // Store organization names as an array
+        } else {
+          token.organizations = [];  // No organizations
+        }
       }
 
       // Refresh token after update()
@@ -85,12 +104,21 @@ export const authOptions = {
           select: {
             emailVerified: true,
             role: true,
+            organizations: {
+              select: {
+                name: true,
+              },
+            },
           },
         });
 
         if (dbUser) {
           token.emailVerified = dbUser.emailVerified;
           token.role = dbUser.role;
+          if(dbUser?.organizations) {
+            token.organizations = dbUser.organizations.map(org => org.name);
+          }
+          token.organizations = [];  // No organizations
         }
       }
 
@@ -101,6 +129,7 @@ export const authOptions = {
       session.user.id = token.id;
       session.user.role = token.role;
       session.user.emailVerified = token.emailVerified;
+      session.user.organizations = token.organizations; // Add organizations to the session
       return session;
     },
   },
