@@ -58,8 +58,8 @@ export default function DashboardPage() {
       <main className="max-w-7xl mx-auto px-6 py-12 animate-pulse space-y-12">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex flex-col space-y-2">
-            <div className="h-8 w-lg bg-gray-200 rounded" />
-            <div className="h-3 w-md bg-gray-200 rounded" />
+            <div className="h-8 max-w-lg bg-gray-200 rounded" />
+            <div className="h-3 max-w-md bg-gray-200 rounded" />
           </div>
           <div className="flex items-start gap-4 justify-end">
             <div className="h-8 w-40 rounded-4xl bg-gray-200"></div>
@@ -69,7 +69,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-pulse">
           <div className="col-span-1 lg:col-span-2 rounded-2xl bg-white border border-gray-200 px-6 pt-8 pb-6 space-y-6">
             <div className="space-y-3">
-              <div className="h-6 w-64 bg-gray-200 rounded" />
+              <div className="h-6 max-w-64 bg-gray-200 rounded" />
               <div className="h-4 w-96 max-w-full bg-gray-200 rounded" />
             </div>
 
@@ -139,17 +139,17 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex flex-col items-end gap-4 justify-start">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col lg:flex-row items-center gap-4">
             <button className="cursor-pointer rounded-4xl bg-slate-100/80 border border-gray-300
-              hover:bg-purple-100 hover:scale-95 px-4 py-2 flex items-center gap-2 transition-all duration-300">
-              <MdOutlineFileDownload className="size-5 shrink-0" />
-              <span className="font-medium">Export Report</span>
+              hover:bg-purple-100 hover:scale-95 px-3 md:px-4 py-2 flex items-center gap-2 transition-all duration-300">
+              <MdOutlineFileDownload className="size-4 md:size-5 shrink-0" />
+              <span className="md:font-medium">Export Report</span>
             </button>
             <button onClick={() => router.push("/assessment")}
               className="cursor-pointer rounded-4xl bg-linear-to-r from-[#441851] to-[#761be6] 
-               px-4 py-2 flex items-center gap-2 hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
+              px-3 md:px-4 py-2 flex items-center gap-2 hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
               <FaCirclePlus className="size-4 text-white shrink-0" />
-              <span className="font-medium text-white">New Assessment</span>
+              <span className="md:font-medium text-white">New Assessment</span>
             </button>
           </div>
 
@@ -184,7 +184,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Card Content */}
-          <div className="flex flex-col md:flex-row items-center gap-8">
+          <div className="flex flex-col md:flex-row items-center gap-7 md:gap-5 lg:gap-8">
             {/* Circle Progress */}
             <div className="relative flex items-center justify-center w-48 h-48 shrink-0">
               <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
@@ -247,14 +247,14 @@ export default function DashboardPage() {
                 {riskLevel === "Not started" ? (
                   <button onClick={() => router.push("/assessment")}
                     className="flex-1 cursor-pointer rounded-xl bg-linear-to-r from-[#441851] to-[#761be6] 
-                    px-4 py-2 flex items-center justify-center gap-2 hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
+                    px-4 py-4 md:py-2 flex items-center justify-center gap-2 hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
                     <span className="font-medium text-white">Start Assessment</span>
                     <FaArrowRight className="text-white shrink-0" />
                   </button>
                 ) : (
                   <Link href={"#recommended-actions"}
                     className="flex-1 rounded-xl bg-linear-to-r from-[#441851] to-[#761be6] 
-                     px-2 py-2 flex items-center justify-center gap-2 hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
+                     py-4 px-2 md:py-2 flex items-center justify-center gap-2 hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
                     <span className=" text-white">Recommended Action</span>
                     <FaArrowRight className="text-white rotate-90 shrink-0" />
                   </Link>
@@ -318,7 +318,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Content */}
-        <div className="grid gap-8 px-4 py-6 lg:grid-cols-3">
+        <div className="grid gap-8 px-4 py-6 lg:grid-cols-2 xl:grid-cols-3">
 
           {/* Column 1: What Your Score Means */}
           <div className="space-y-5">
@@ -406,7 +406,7 @@ export default function DashboardPage() {
                   <li key={idx} className="flex items-start gap-3">
                     <FaTimesCircle className="mt-1 text-red-500" />
                     <div>
-                      <p className="font-medium">{item.title}</p>
+                      <p className="text-sm sm:text-base font-medium">{item.title}</p>
                       <p className="text-sm font-medium text-gray-500">{item.desc}</p>
                     </div>
                   </li>
@@ -416,7 +416,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Column 3: Why Scores Change */}
-          <div className="space-y-5">
+          <div className="lg:col-span-2 xl:col-span-1 space-y-5">
             <h3 className="font-semibold text-lg flex items-center gap-2">
               <FaSyncAlt className="size-4 text-[rgb(var(--light-purple))]" />
               <span className="bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">
@@ -431,7 +431,7 @@ export default function DashboardPage() {
                   <FaArrowRight className="-rotate-90" />
                 </div>
                 <div>
-                  <p className="font-medium">Completing actions improves score</p>
+                  <p className="text-sm sm:text-base font-medium">Completing actions improves score</p>
                   <p className="text-xs text-gray-600 mt-1">
                     Implementing controls and uploading evidence boosts readiness.
                   </p>
@@ -444,7 +444,7 @@ export default function DashboardPage() {
                   <FaArrowRight className="rotate-90" />
                 </div>
                 <div>
-                  <p className="font-medium">New risks may reduce score</p>
+                  <p className="text-sm sm:text-base font-medium">New risks may reduce score</p>
                   <p className="text-xs text-gray-600 mt-1">
                     Regulatory changes or threats can introduce new gaps.
                   </p>
@@ -457,7 +457,7 @@ export default function DashboardPage() {
                   <FaHistory />
                 </div>
                 <div>
-                  <p className="font-medium">Reassessments keep data current</p>
+                  <p className="text-sm sm:text-base font-medium">Reassessments keep data current</p>
                   <p className="text-xs text-gray-600 mt-1">
                     Periodic reviews ensure real-time accuracy.
                   </p>
@@ -517,11 +517,11 @@ export default function DashboardPage() {
         </div>
       ) : (
         // Next Recommended Actions
-        <div id="recommended-actions" className="relative overflow-hidden hover:shadow-[0_20px_40px_rgba(118,27,230,0.12)] transition rounded-2xl bg-linear-to-tr from-purple-100 via-white to-white px-6 py-8">
+        <div id="recommended-actions" className="relative overflow-hidden hover:shadow-[0_20px_40px_rgba(118,27,230,0.12)] transition rounded-2xl bg-linear-to-tr from-purple-100 via-white to-white px-3 sm:px-6 py-8">
           <div className="absolute top-0 right-0 w-64 h-64 bg-purple-100 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
 
           {/* Header */}
-          <div className="border-b border-purple-300 pb-4 sm:pb-6">
+          <div className="relative border-b border-purple-300 pb-4 sm:pb-6">
             <div className="flex items-center gap-3">
               <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 text-purple-500">
                 <span className="absolute inline-flex h-full w-full rounded-full bg-purple-300 opacity-20 animate-ping"></span>
@@ -542,15 +542,15 @@ export default function DashboardPage() {
           <div className="space-y-6">
 
             {/* Content */}
-            <div className="px-6 pt-6 space-y-4 sm:space-y-6">
+            <div className="px-2 sm:px-4 lg:px-6 pt-6 space-y-4 sm:space-y-6">
               {visibleActions.map((action) => (
-                <div key={action.id} className="flex items-center gap-4 p-4 rounded-xl border border-purple-300 bg-white hover:bg-purple-50 transition group">
+                <div key={action.id} className="flex flex-col md:flex-row items-start md:items-center gap-3 lg:gap-4 p-4 rounded-xl border border-purple-300 bg-white hover:bg-purple-50 transition group">
                   <div className="mt-1 w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition">
                     <FaClipboardList />
                   </div>
 
                   <div className="flex-1">
-                    <h4 className="font-semibold">
+                    <h4 className="text-sm md:text-base font-semibold">
                       {action.title}
                     </h4>
                     <p className="text-sm font-medium text-gray-700 mt-1">
@@ -559,8 +559,8 @@ export default function DashboardPage() {
                   </div>
 
                   <button onClick={() => router.push(`/actions/${action.id}`)}
-                    className="text-sm px-3 py-2 cursor-pointer border-none rounded-lg text-white bg-linear-to-r from-[#441851] to-[#761be6]
-                hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
+                    className="md:ml-3 text-sm px-3 py-2 cursor-pointer border-none rounded-lg text-white bg-linear-to-r from-[#441851] to-[#761be6]
+                   hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
                     View Action
                   </button>
                 </div>
