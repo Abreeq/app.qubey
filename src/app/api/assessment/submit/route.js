@@ -109,7 +109,7 @@ export async function POST(req) {
           answer,
         };
       })
-      .filter((x) => x.answer === "NO" || x.answer === "UNANSWERED" || x.answer === "PARTIAL");
+      .filter((x) => x.answer === "NO" || x.answer === "UNANSWERED");
 
     const prompt = `
 You are a cybersecurity compliance expert with deep knowledge of UAE regulations, including PDPL, ISO 27001, NESA basic controls, and local industry best practices.

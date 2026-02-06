@@ -35,10 +35,16 @@ export async function GET() {
     });
   }
 
-  const nextAction = await prisma.complianceAction.findFirst({
+  const nextAction = await prisma.complianceAction.findMany
+  ({
     where: {
       organizationId: org.id,
       OR : [{ status: "PENDING" }, { status: "IN_PROGRESS" }],
+    },
+    select: {
+        id: true,
+        title: true,
+        expectedIncrease: true,
     },
     orderBy: { createdAt: "asc" },
   });
@@ -56,11 +62,7 @@ export async function GET() {
     },
 
     nextAction: nextAction
-      ? {
-          id: nextAction.id,
-          title: nextAction.title,
-          expectedIncrease: nextAction.expectedIncrease,
-        }
+      ? nextAction
       : null,
   });
 }

@@ -57,7 +57,7 @@ export default function ProfileDropdown({ user }) {
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute top-7 lg:right-0 mt-3 w-60 bg-white/90 border border-purple-200 shadow-xl rounded-xl z-50 overflow-hidden">
+        <div className="absolute top-7 lg:right-0 mt-3 w-64 bg-white/90 border border-purple-200 shadow-xl rounded-xl z-50 overflow-hidden">
           <div className="flex items-center gap-3 p-3 bg-linear-to-r from-[#761be6]/65 to-[#761be6]">
             {user.image ? (
               <Image
@@ -74,12 +74,12 @@ export default function ProfileDropdown({ user }) {
               </div>
             )}
 
-            <div className="flex flex-col gap-0.5 text-gray-100">
+            <div className="flex flex-col gap-0.5 text-gray-100 min-w-0">
               <p className="text-sm font-medium leading-none">{user.name}</p>
-              <p className="text-xs">{user.email}</p>
+              <p className="text-xs break-all">{user.email}</p>
             </div>
           </div>
-          <div className="p-1">
+          <div className="px-1 py-1.5">
             <Link
               href="/profile"
               className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md hover:bg-linear-to-bl hover:from-purple-100 hover:to-purple-200 transition-colors"
@@ -102,9 +102,9 @@ export default function ProfileDropdown({ user }) {
 
             <button
               onClick={() => signOut()}
-              className="w-full cursor-pointer flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md hover:bg-linear-to-bl hover:from-purple-100 hover:to-purple-200 transition-colors"
+              className="w-full cursor-pointer flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md hover:bg-linear-to-bl hover:from-red-300 hover:to-red-500 hover:text-white group transition-colors"
             >
-              <IoLogOut className="size-5 shrink-0 text-[rgb(var(--light-purple))]" />
+              <IoLogOut className="size-5 shrink-0 text-[rgb(var(--light-purple))] group-hover:text-white" />
               Sign out
             </button>
 
