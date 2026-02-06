@@ -62,7 +62,7 @@ export async function GET() {
     readinessScore: snapshot.readinessScore,
     riskLevel: snapshot.riskLevel,
     lastAssessmentAt: snapshot.lastAssessmentAt,
-
+    organisationName: org.name,
     stats: {
       highRisks: snapshot.highRiskCount,
       actionsPending: snapshot.actionsPending,

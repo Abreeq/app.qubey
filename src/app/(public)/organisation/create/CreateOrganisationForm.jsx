@@ -277,13 +277,13 @@ export default function CreateOrganisationForm() {
         {/* Privacy Policy */}
         <p className="text-center text-sm mt-6">
           By creating an organisation, you agree to our{" "}
-          <span className="underline hover:text-purple-600 cursor-pointer transition-colors">
+          <a href="https://staging.qubey.ae/terms" rel="noopener noreferrer" target="_blank" className="underline hover:text-purple-600 cursor-pointer transition-colors">
             Terms of Service
-          </span>{" "}
+          </a>{" "}
           and{" "}
-          <span className="underline hover:text-purple-600 cursor-pointer transition-colors">
+          <a href="https://staging.qubey.ae/privacy" rel="noopener noreferrer" target="_blank" className="underline hover:text-purple-600 cursor-pointer transition-colors">
             Privacy Policy
-          </span>
+          </a>
           .
         </p>
       </div>
