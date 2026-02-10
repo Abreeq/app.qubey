@@ -34,9 +34,10 @@ export default function DashboardPage() {
           return;
         }
 
-        if(res.status === 404) {
-          if(json.error === "Organization not found") {
-          router.push("/organisation/create");
+        if (res.status === 404) {
+          if (json.error === "Organization not found") {
+            router.push("/organisation/create");
+            return
           }
           router.push("/auth");
           return;
@@ -179,7 +180,7 @@ export default function DashboardPage() {
               <span className="bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">Overall Readiness Score</span>
             </h2>
             <p className="font-medium mt-1">
-              This score represents your compliance status across all assessments and policies.
+              This score represents your compliance status across all assessments and policies. The Score is based on PDPL, ISO 27001, and NESA controls.
             </p>
           </div>
 
@@ -269,7 +270,11 @@ export default function DashboardPage() {
         <div className="col-span-1 flex flex-col rounded-2xl bg-white/60 backdrop-blur-2xl shadow-[0_20px_40px_rgba(118,27,230,0.12)] border border-gray-300 p-4 sm:px-6 pt-8 pb-6">
           <div className="mb-4">
             <h3 className="font-semibold text-xl sm:text-2xl bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">Action Center</h3>
-            <p className="font-medium">Immediate attention required</p>
+            <p className="font-medium">
+              {riskLevel === "Low" && "Optional improvements available"}
+              {riskLevel === "Medium" && "Priority actions recommended"}
+              {riskLevel === "High" && "Critical actions required"}
+            </p>  
           </div>
 
           <div className="flex-1 flex flex-col justify-center gap-4">
@@ -295,6 +300,125 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Next Recommended Action */}
+      {!hasAssessment ? (
+        <div className="relative overflow-hidden hover:shadow-[0_20px_40px_rgba(118,27,230,0.12)] transition rounded-2xl bg-linear-to-tr from-purple-100 via-white to-white px-6 py-8">
+          <div className="pb-4 sm:pb-6">
+            <div className="flex items-center gap-3">
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 text-purple-500">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-purple-300 opacity-20 animate-ping"></span>
+                <FaPlay className="relative ml-1 text-lg text-purple-700" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-xl sm:text-2xl flex items-center gap-2 bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">
+                  Run your First Assessment
+                </h2>
+                <p className="font-medium mt-1">
+                  Complete an assessment to receive tailored recommendations and improve your score.
+                </p>
+              </div>
+            </div>
+
+            <button onClick={() => router.push("/assessment")}
+              className="cursor-pointer ml-12 mt-4 px-4 py-2 rounded-lg text-white bg-linear-to-r from-[#441851] to-[#761be6]
+            hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
+              Start assessment
+            </button>
+          </div>
+        </div>
+      ) : noActionsAfterAssessment ? (
+        <div className="relative overflow-hidden hover:shadow-[0_20px_40px_rgba(118,27,230,0.12)] transition rounded-2xl bg-linear-to-tr from-purple-100 via-white to-white px-6 py-8">
+          <div className="pb-4 sm:pb-6">
+            <div className="flex items-center gap-3">
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-500">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-green-300 opacity-20"></span>
+                <FaCheck className="relative text-lg text-green-700" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-xl sm:text-2xl flex items-center gap-2 bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">
+                  You’re all Caught Up
+                </h2>
+                <p className="font-medium mt-1">
+                  No recommended actions at the moment. Your controls meet current requirements.
+                </p>
+                <p className="font-medium mt-1">
+                  Re-run assessment if your business changes or regulations update.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        // Next Recommended Actions
+        <div id="recommended-actions" className="relative overflow-hidden hover:shadow-[0_20px_40px_rgba(118,27,230,0.12)] transition rounded-2xl bg-linear-to-tr from-purple-100 via-white to-white px-3 sm:px-6 py-8">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-purple-100 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+
+          {/* Header */}
+          <div className="relative border-b border-purple-300 pb-4 sm:pb-6">
+            <div className="flex items-center gap-3">
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 text-purple-500">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-purple-300 opacity-20 animate-ping"></span>
+                <TbTargetArrow className="relative text-xl text-purple-700" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-xl sm:text-2xl flex items-center gap-2 bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">
+                  Next Recommended Actions
+                </h2>
+                <p className="font-medium mt-1">
+                  Recommended steps to improve your compliance score.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="space-y-6">
+
+            {/* Content */}
+            <div className="px-2 sm:px-4 lg:px-6 pt-6 space-y-4 sm:space-y-6">
+              {visibleActions.map((action) => (
+                <div key={action.id} className="flex flex-col md:flex-row items-start md:items-center gap-3 lg:gap-4 p-4 rounded-xl border border-purple-300 bg-white hover:bg-purple-50 transition group">
+                  <div className="mt-1 w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition">
+                    <FaClipboardList />
+                  </div>
+
+                  <div className="flex-1">
+                    <h4 className="text-sm md:text-base font-semibold">
+                      {action.title}
+                    </h4>
+                    <p className="text-sm font-medium text-gray-700 mt-1">
+                      This could improve your score by approximately{" "}<span className="font-semibold">{action.expectedIncrease} points.</span>
+                    </p>
+                  </div>
+
+                  <button onClick={() => router.push(`/actions/${action.id}`)}
+                    className="md:ml-3 text-sm px-3 py-2 cursor-pointer border-none rounded-lg text-white bg-linear-to-r from-[#441851] to-[#761be6]
+                   hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
+                    View Action
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* View all Button */}
+            {nextAction.length > 3 && (
+              <div className="border-t border-purple-300 p-4 sm:p-6">
+                <button onClick={() => setShowAll(!showAll)}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-3 cursor-pointer border-none rounded-lg text-white bg-linear-to-r from-[#441851] to-[#761be6]
+                hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
+                  {showAll
+                    ? "Show fewer actions"
+                    : `View all ${nextAction.length} pending actions`}
+                  <FaArrowRight className={`transition-transform ${showAll ? "rotate-90" : ""}`} />
+                </button>
+              </div>
+            )}
+          </div>
+
+        </div>
+      )}
+
 
       {/* Understand your score */}
       <div className="overflow-hidden rounded-2xl bg-white/60 backdrop-blur-2xl shadow-[0_20px_40px_rgba(118,27,230,0.12)] p-4 sm:p-6">
@@ -468,122 +592,6 @@ export default function DashboardPage() {
 
         </div>
       </div>
-
-
-      {/* Next Recommended Action */}
-      {!hasAssessment ? (
-        <div className="relative overflow-hidden hover:shadow-[0_20px_40px_rgba(118,27,230,0.12)] transition rounded-2xl bg-linear-to-tr from-purple-100 via-white to-white px-6 py-8">
-          <div className="pb-4 sm:pb-6">
-            <div className="flex items-center gap-3">
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 text-purple-500">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-purple-300 opacity-20 animate-ping"></span>
-                <FaPlay className="relative ml-1 text-lg text-purple-700" />
-              </div>
-              <div>
-                <h2 className="font-semibold text-xl sm:text-2xl flex items-center gap-2 bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">
-                  Run your First Assessment
-                </h2>
-                <p className="font-medium mt-1">
-                  Complete an assessment to receive tailored recommendations and improve your score.
-                </p>
-              </div>
-            </div>
-
-            <button onClick={() => router.push("/assessment")}
-              className="cursor-pointer ml-12 mt-4 px-4 py-2 rounded-lg text-white bg-linear-to-r from-[#441851] to-[#761be6]
-            hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
-              Start assessment
-            </button>
-          </div>
-        </div>
-      ) : noActionsAfterAssessment ? (
-        <div className="relative overflow-hidden hover:shadow-[0_20px_40px_rgba(118,27,230,0.12)] transition rounded-2xl bg-linear-to-tr from-purple-100 via-white to-white px-6 py-8">
-          <div className="pb-4 sm:pb-6">
-            <div className="flex items-center gap-3">
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-500">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-green-300 opacity-20 animate-ping"></span>
-                <FaCheck className="relative text-lg text-green-700" />
-              </div>
-              <div>
-                <h2 className="font-semibold text-xl sm:text-2xl flex items-center gap-2 bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">
-                  You’re all Caught Up
-                </h2>
-                <p className="font-medium mt-1">
-                  No recommended actions at the moment. Your controls meet current requirements.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        // Next Recommended Actions
-        <div id="recommended-actions" className="relative overflow-hidden hover:shadow-[0_20px_40px_rgba(118,27,230,0.12)] transition rounded-2xl bg-linear-to-tr from-purple-100 via-white to-white px-3 sm:px-6 py-8">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-purple-100 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-
-          {/* Header */}
-          <div className="relative border-b border-purple-300 pb-4 sm:pb-6">
-            <div className="flex items-center gap-3">
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 text-purple-500">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-purple-300 opacity-20 animate-ping"></span>
-                <TbTargetArrow className="relative text-xl text-purple-700" />
-              </div>
-              <div>
-                <h2 className="font-semibold text-xl sm:text-2xl flex items-center gap-2 bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">
-                  Next Recommended Actions
-                </h2>
-                <p className="font-medium mt-1">
-                  Recommended steps to improve your compliance score.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="space-y-6">
-
-            {/* Content */}
-            <div className="px-2 sm:px-4 lg:px-6 pt-6 space-y-4 sm:space-y-6">
-              {visibleActions.map((action) => (
-                <div key={action.id} className="flex flex-col md:flex-row items-start md:items-center gap-3 lg:gap-4 p-4 rounded-xl border border-purple-300 bg-white hover:bg-purple-50 transition group">
-                  <div className="mt-1 w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition">
-                    <FaClipboardList />
-                  </div>
-
-                  <div className="flex-1">
-                    <h4 className="text-sm md:text-base font-semibold">
-                      {action.title}
-                    </h4>
-                    <p className="text-sm font-medium text-gray-700 mt-1">
-                      This could improve your score by approximately{" "}<span className="font-semibold">{action.expectedIncrease} points.</span>
-                    </p>
-                  </div>
-
-                  <button onClick={() => router.push(`/actions/${action.id}`)}
-                    className="md:ml-3 text-sm px-3 py-2 cursor-pointer border-none rounded-lg text-white bg-linear-to-r from-[#441851] to-[#761be6]
-                   hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
-                    View Action
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            {/* View all Button */}
-            {nextAction.length > 3 && (
-              <div className="border-t border-purple-300 p-4 sm:p-6">
-                <button onClick={() => setShowAll(!showAll)}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-3 cursor-pointer border-none rounded-lg text-white bg-linear-to-r from-[#441851] to-[#761be6]
-                hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
-                  {showAll
-                    ? "Show fewer actions"
-                    : `View all ${nextAction.length} pending actions`}
-                  <FaArrowRight className={`transition-transform ${showAll ? "rotate-90" : ""}`} />
-                </button>
-              </div>
-            )}
-          </div>
-
-        </div>
-      )}
 
     </section>
   );

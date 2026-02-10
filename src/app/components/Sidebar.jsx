@@ -3,9 +3,8 @@
 import React from 'react'
 import Link from "next/link";
 import {
-  HiOutlineCog6Tooth,HiDocumentChartBar, HiClipboardDocumentCheck
+  HiOutlineCog6Tooth,HiDocumentChartBar, HiClipboardDocumentCheck, HiBuildingOffice2
 } from "react-icons/hi2";
-import { FaBuilding } from "react-icons/fa";
 import { TbLayoutDashboardFilled } from "react-icons/tb";
 import { RiMenu3Line } from "react-icons/ri";
 
@@ -18,15 +17,14 @@ export default function Sidebar({collapsed, setCollapsed}) {
         setCollapsed(true);
     };
     const { data: session } = useSession();
-    
     return (
         <aside className={`${collapsed ? "w-16" : "w-full sm:w-44 md:w-48 lg:w-50"} fixed top-18 left-0 h-[calc(100vh-72px)]
          bg-white border-r-2 border-black/10 shadow-sm transition-all duration-300 z-40`}>
             {/* Sidebar Header (affected by collapse) */}
             <div className="h-14 flex items-center justify-between px-3 border-b border-purple-400">
                 {!collapsed && (
-                    <span className="font-bold text-sm uppercase tracking-wide">
-                        {session?.user?.organizations?.[0] || "Dashboard"}
+                    <span className="font-bold text-sm uppercase bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent tracking-wide">
+                        {session?.user?.organizations?.[0] || "Menu"}
                     </span>
                 )}
                 <button
@@ -62,7 +60,7 @@ export default function Sidebar({collapsed, setCollapsed}) {
                 />
                 <SidebarLink
                     href="/organisation/edit"
-                    icon={<FaBuilding />}
+                    icon={<HiBuildingOffice2 />}
                     label="Organisation"
                     collapsed={collapsed}
                     onClick={handleNavClick}

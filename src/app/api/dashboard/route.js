@@ -18,7 +18,7 @@ export async function GET() {
     return Response.json({ error: "Email not verified" }, { status: 403 });
   }
   const org = await prisma.organization.findFirst({
-    where: { ownerId: session.user.id },
+    where: { ownerId: userId },
   });
 
   if (!org) {

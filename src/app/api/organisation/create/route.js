@@ -11,7 +11,7 @@ export async function POST(req) {
     }
 
     const body = await req.json();
-    const { name, industry, companySize, country, handlesPII, handlesPayments } =
+    const { name, industry, companySize, industryOther, country, handlesPII, handlesPayments } =
       body;
 
     if (!name || !industry || !companySize) {
@@ -36,6 +36,7 @@ export async function POST(req) {
       data: {
         name,
         industry,
+        industryOther,
         companySize,
         country: country || "UAE",
         handlesPII: !!handlesPII,
