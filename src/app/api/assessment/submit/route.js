@@ -192,6 +192,7 @@ for (const q of assessment.questions) {
   if (answer === "NO") {
     risks.push({
       organizationId: assessment.organizationId,
+      assessmentId,
       title: q.text,
       severity: "HIGH",
       status: "OPEN",
@@ -201,6 +202,7 @@ for (const q of assessment.questions) {
   if (answer === "PARTIAL") {
     risks.push({
       organizationId: assessment.organizationId,
+      assessmentId,
       title: q.text,
       severity: "MEDIUM",
       status: "OPEN",
@@ -215,8 +217,9 @@ if (risks.length) {
 // --------------------
 // Create actions (simple mapping for now)
 
-const actions = risks.slice(0, 5).map((r) => ({
+const actions = risks.map((r) => ({
   organizationId: assessment.organizationId,
+  assessmentId,
   title: `Fix: ${r.title}`,
   description: "Implement required control to close this gap",
   expectedIncrease: 5,
@@ -230,14 +233,13 @@ if (actions.length) {
 // --------------------
 // Create or update snapshot
 
-const highRiskCount = risks.filter(r => r.severity === "HIGH").length;
-
 await prisma.complianceSnapshot.upsert({
   where: { organizationId: assessment.organizationId },
   update: {
+    assessmentId,
     readinessScore: score,
     riskLevel,
-    highRiskCount,
+    highRiskCount:risks.length,
     actionsPending: actions.length,
     actionsCompleted: 0,
     scoreImprovement: 0,
@@ -245,9 +247,10 @@ await prisma.complianceSnapshot.upsert({
   },
   create: {
     organizationId: assessment.organizationId,
+    assessmentId,
     readinessScore: score,
     riskLevel,
-    highRiskCount,
+    highRiskCount:risks.length,
     actionsPending: actions.length,
     actionsCompleted: 0,
     scoreImprovement: 0,

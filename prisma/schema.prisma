@@ -11,15 +11,15 @@ datasource db {
 /// * USER MODEL
 /// * ======================
 model User {
-  id            String        @id @default(uuid())
+  id            String         @id @default(uuid())
   name          String?
-  email         String        @unique
+  email         String         @unique
   emailVerified DateTime?
   password      String?
   image         String?
-  role          Role          @default(USER)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  role          Role           @default(USER)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   accounts      Account[]
   organizations Organization[]
   sessions      Session[]
@@ -72,111 +72,148 @@ model VerificationToken {
 }
 
 model Organization {
-  id              String              @id @default(cuid())
+  id              String  @id @default(cuid())
   name            String
-  ownerId         String              @unique
-  createdAt       DateTime            @default(now())
-  complianceScore Float               @default(0)
-  riskLevel       String              @default("Unknown")
-  openGaps        Int                 @default(0)
-  companySize     String
-  country         String              @default("UAE")
-  handlesPII      Boolean             @default(false)
-  handlesPayments Boolean             @default(false)
   industry        String
   industryOther   String?
-  profileVersion  Int                 @default(1)
-  updatedAt       DateTime?           @updatedAt
-  actions         ComplianceAction[]
-  snapshot        ComplianceSnapshot?
-  owner           User                @relation(fields: [ownerId], references: [id])
-  risks           Risk[]
+  companySize     String
+  country         String  @default("UAE")
+  handlesPII      Boolean @default(false)
+  handlesPayments Boolean @default(false)
+
+  profileVersion Int @default(1)
+
+  ownerId String @unique
+  owner   User   @relation(fields: [ownerId], references: [id])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+
+  complianceScore Float  @default(0)
+  riskLevel       String @default("Unknown")
+  openGaps        Int    @default(0)
+
+  snapshot ComplianceSnapshot?
+  risks    Risk[]
+  actions  ComplianceAction[]
 }
 
 model Assessment {
-  id             String     @id @default(cuid())
+  id             String @id @default(cuid())
   userId         String
   organizationId String
-  status         String     @default("IN_PROGRESS")
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
-  profileVersion Int        @default(1)
-  questions      Question[]
+  status         String @default("IN_PROGRESS") // IN_PROGRESS | COMPLETED
+  profileVersion Int    @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  questions           Question[]
+  complianceSnapshots ComplianceSnapshot[]
+  risks               Risk[]
+  complianceActions   ComplianceAction[]
 }
 
 model Question {
   id           String     @id @default(cuid())
   assessmentId String
-  text         String
-  category     String
-  weight       Int        @default(1)
-  answers      Answer[]
   assessment   Assessment @relation(fields: [assessmentId], references: [id])
+
+  text     String
+  category String
+  weight   Int    @default(1)
+
+  answers Answer[]
 }
 
 model Answer {
   id         String   @id @default(cuid())
   questionId String
-  value      String
-  notes      String?
   question   Question @relation(fields: [questionId], references: [id])
+
+  value String // YES / NO / PARTIAL
+  notes String?
 }
 
 model Report {
-  id              String   @id @default(cuid())
-  userId          String
-  organizationId  String
-  assessmentId    String   @unique
-  score           Int
-  riskLevel       String
-  openGaps        Int
+  id             String @id @default(cuid())
+  userId         String
+  organizationId String
+  assessmentId   String @unique
+
+  score     Int
+  riskLevel String
+  openGaps  Int
+
   summary         String
   keyFindings     String
   recommendations String
-  createdAt       DateTime @default(now())
+
+  createdAt DateTime @default(now())
 }
 
 model ComplianceSnapshot {
-  id               String       @id @default(cuid())
-  organizationId   String       @unique
-  readinessScore   Int
-  riskLevel        String
-  actionsCompleted Int          @default(0)
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
-  highRiskCount    Int          @default(0)
+  id             String @id @default(cuid())
+  organizationId String @unique
+  assessmentId   String
+
+  readinessScore Int
+  riskLevel      String
+
+  highRiskCount    Int @default(0)
+  actionsPending   Int @default(0)
+  actionsCompleted Int @default(0)
+  scoreImprovement Int @default(0)
+
   lastAssessmentAt DateTime?
-  scoreImprovement Int          @default(0)
-  actionsPending   Int          @default(0)
-  organization     Organization @relation(fields: [organizationId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  assessment   Assessment   @relation(fields: [assessmentId], references: [id])
 }
 
 model Risk {
-  id             String       @id @default(cuid())
+  id             String @id @default(cuid())
   organizationId String
-  title          String
-  severity       String
-  status         String
-  createdAt      DateTime     @default(now())
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  assessmentId   String
+
+  title    String
+  severity String // HIGH | MEDIUM | LOW
+  status   String // OPEN | FIXED
+
+  createdAt DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  assessment   Assessment   @relation(fields: [assessmentId], references: [id])
 }
 
 model ComplianceAction {
-  id               String       @id @default(cuid())
-  organizationId   String
-  title            String
-  description      String
+  id             String @id @default(cuid())
+  organizationId String
+  assessmentId   String
+
+  title       String
+  description String
+
+  remediationSteps String? // long text or markdown
+
   expectedIncrease Int
-  status           String
-  createdAt        DateTime     @default(now())
-  remediationSteps String?
-  organization     Organization @relation(fields: [organizationId], references: [id])
+
+  status String // PENDING | IN_PROGRESS | COMPLETED
+
+  createdAt DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  assessment   Assessment   @relation(fields: [assessmentId], references: [id])
 }
 
-/// *
-/// * ======================
-/// * USER ROLES
-/// * ======================
+/**
+ * ======================
+ * USER ROLES
+ * ======================
+ */
 enum Role {
   USER
   ADMIN
