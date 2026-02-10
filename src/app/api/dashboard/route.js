@@ -48,6 +48,7 @@ export async function GET() {
   ({
     where: {
       organizationId: org.id,
+      assessmentId: snapshot.assessmentId,
       OR : [{ status: "PENDING" }, { status: "IN_PROGRESS" }],
     },
     select: {
