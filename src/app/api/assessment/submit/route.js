@@ -73,7 +73,7 @@ export async function POST(req) {
       else openGaps += 1;
     }
 
-    const score = total === 0 ? 0 : Math.round((gained / total) * 100);
+    const score = total === 0 ? 0 : (gained / total) * 100;
 
     const riskLevel =
       score >= 80 ? "Low" : score >= 50 ? "Medium" : "High";
@@ -222,7 +222,7 @@ const actions = risks.map((r) => ({
   assessmentId,
   title: `Fix: ${r.title}`,
   description: "Implement required control to close this gap",
-  expectedIncrease: 5,
+  expectedIncrease: r.severity === "HIGH" ? 5 :  5 * 0.5,
   status: "PENDING",
 }));
 
