@@ -14,11 +14,13 @@ export default function CreateOrganisationForm() {
   const [form, setForm] = useState({
     name: "",
     industry: "",
+    industryOther: "",
     companySize: "",
     country: "United Arab Emirates",
     handlesPII: false,
     handlesPayments: false,
   });
+
   const [isOtherIndustry, setIsOtherIndustry] = useState(false);
   const [errorMsg, setErrorMsg] = useState({});
   const [authError, setAuthError] = useState("");
@@ -30,8 +32,9 @@ export default function CreateOrganisationForm() {
 
   //  For Validation
   const conditions = {
-    name: [{ required: true, msg: "Please enter your organization name" }, { length: 3, msg: "Organization name should be greater than 3 Characters" }],
+    name: [{ required: true, msg: "Please enter your organization name" }, { length: 3, msg: "Organization name must be at least 3 characters" }],
     industry: [{ required: true, msg: "Please enter your industry" }],
+    industryOther: [{ required: true, msg: "Please specify your industry"}],
     companySize: [{ required: true, msg: "Please enter your company size" }],
   }
 
@@ -39,7 +42,7 @@ export default function CreateOrganisationForm() {
     const errData = {};
     Object.entries(data).forEach(([key, value]) => {
       conditions[key]?.some((condition) => {
-        if (condition.required && (!value || value.trim() === "")) {
+        if (condition.required && (!value || value.trim() === "") && !(key === "industryOther" && data.industry !== "Other")) {
           errData[key] = condition.msg;
           return true;
         }
@@ -64,10 +67,12 @@ export default function CreateOrganisationForm() {
       return;
     }
 
+    const formObj = { ...form, industryOther: form.industry === "Other" ? form.industryOther : null,};
+
     const res = await fetch("/api/organisation/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify(formObj),
     });
 
     const data = await res.json();
@@ -140,20 +145,20 @@ export default function CreateOrganisationForm() {
                 <label className="text-sm sm:text-base font-medium ml-2 sm:ml-1">
                   Industry Sector <span className="text-red-500">*</span>
                 </label>
-                <select name="industry" value={isOtherIndustry ? "other" : form.industry}
+                <select name="industry" value={isOtherIndustry ? "Other" : form.industry}
                   onFocus={() => setErrorMsg((prev) => ({ ...prev, industry: "" }))}
                   onChange={(e) => {
                     const val = e.target.value;
-
-                    if (val === "other") {
+                    if (val === "Other") {
                       setIsOtherIndustry(true);
-                      handleChange("industry", "");
+                      handleChange("industry", val);
                     } else {
                       setIsOtherIndustry(false);
                       handleChange("industry", val);
+                      handleChange("industryOther", "");
                     }
                   }}
-                  className={`appearance-none bg-[url('/down.svg')] bg-no-repeat bg-size-[16px_16px] bg-position-[right_0.75rem_center] w-full px-3 sm:px-4 py-1.5 sm:py-2 mt-1 text-sm sm:text-base rounded-4xl bg-slate-100/80 border ${errorMsg.industry ? "border-red-500" : "border-gray-300"} text-[#441851]/70 focus:border-[#761be6] focus:ring-1 focus:ring-[#761be6]/10 outline-none transition-all`}
+                  className={`appearance-none bg-[url('/down.svg')] bg-no-repeat bg-size-[16px_16px] bg-position-[right_0.75rem_center] w-full px-3 sm:px-4 py-1.5 sm:py-2 mt-1 text-sm sm:text-base rounded-4xl bg-slate-100/80 border ${errorMsg.industry ? "border-red-500" : "border-gray-300"} focus:border-[#761be6] focus:ring-1 focus:ring-[#761be6]/10 outline-none transition-all`}
                 >
                   <option value="" disabled>
                     Select industry
@@ -162,22 +167,22 @@ export default function CreateOrganisationForm() {
                   <option value="Healthcare">Healthcare</option>
                   <option value="Education">Education</option>
                   <option value="Real Estate">Real Estate</option>
-                  <option value="other">Other</option>
+                  <option value="Other">Other</option>
                 </select>
-
+                {errorMsg.industry && <p className="text-red-600 text-sm mt-1 -mb-3 ml-2">{errorMsg.industry}</p>}
                 {/* Show input if Other is selected */}
                 {isOtherIndustry && (
                   <input
                     type="text"
                     placeholder="Enter your industry"
-                    value={form.industry}
-                    onFocus={() => setErrorMsg((prev) => ({ ...prev, industry: "" }))}
-                    onChange={(e) => handleChange("industry", e.target.value)}
-                    className={`w-full px-3 sm:px-4 py-1.5 sm:py-2 mt-2 text-sm sm:text-base rounded-4xl bg-slate-100/80 border ${errorMsg.industry ? "border-red-500" : "border-gray-300"
+                    value={form.industryOther}
+                    onFocus={() => setErrorMsg((prev) => ({ ...prev, industryOther: "" }))}
+                    onChange={(e) => handleChange("industryOther", e.target.value)}
+                    className={`w-full px-3 sm:px-4 py-1.5 sm:py-2 mt-2 text-sm sm:text-base rounded-4xl bg-slate-100/80 border ${errorMsg.industryOther  ? "border-red-500" : "border-gray-300"
                       } placeholder-[#441851]/40 focus:border-[#761be6] focus:ring-1 focus:ring-[#761be6]/10 outline-none transition-all`}
                   />
                 )}
-                {errorMsg.industry && <p className="text-red-600 text-sm mt-1 -mb-3 ml-2">{errorMsg.industry}</p>}
+                {errorMsg.industryOther && <p className="text-red-600 text-sm mt-1 -mb-3 ml-2">{errorMsg.industryOther}</p>}
               </div>
 
               {/* Company Size */}
@@ -188,7 +193,7 @@ export default function CreateOrganisationForm() {
                 <select name="companySize" value={form.companySize}
                   onFocus={() => setErrorMsg((prev) => ({ ...prev, companySize: "" }))}
                   onChange={(e) => handleChange(e.target.name, e.target.value)}
-                  className={`appearance-none bg-[url('/down.svg')] bg-no-repeat bg-size-[16px_16px] bg-position-[right_0.75rem_center] w-full px-3 sm:px-4 py-1.5 sm:py-2 mt-1 text-sm sm:text-base rounded-4xl bg-slate-100/80 border ${errorMsg.companySize ? "border-red-500" : "border-gray-300"} text-[#441851]/70 focus:border-[#761be6] focus:ring-1 focus:ring-[#761be6]/10 outline-none transition-all`}
+                  className={`appearance-none bg-[url('/down.svg')] bg-no-repeat bg-size-[16px_16px] bg-position-[right_0.75rem_center] w-full px-3 sm:px-4 py-1.5 sm:py-2 mt-1 text-sm sm:text-base rounded-4xl bg-slate-100/80 border ${errorMsg.companySize ? "border-red-500" : "border-gray-300"} focus:border-[#761be6] focus:ring-1 focus:ring-[#761be6]/10 outline-none transition-all`}
                 >
                   <option value="" disabled>
                     Select range
