@@ -91,7 +91,7 @@ export const authOptions = {
 
         // If the user belongs to any organizations, attach the list of organization names to the token
         if (dbUser?.organizations) {
-          token.organizations = dbUser.organizations.map(org => org.name); // Store organization names as an array
+          token.organizations = dbUser.organizations.name; // Store organization names as an array
         } else {
           token.organizations = [];  // No organizations
         }
@@ -116,7 +116,7 @@ export const authOptions = {
           token.emailVerified = dbUser.emailVerified;
           token.role = dbUser.role;
           if(dbUser?.organizations) {
-            token.organizations = dbUser.organizations.map(org => org.name);
+            token.organizations = dbUser.organizations.name;
           }
           token.organizations = [];  // No organizations
         }
