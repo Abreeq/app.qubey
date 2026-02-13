@@ -130,7 +130,7 @@ model Report {
   userId          String
   organizationId  String
   assessmentId    String   @unique
-  score           Int
+  score           Float
   riskLevel       String
   openGaps        Int
   summary         String
@@ -142,14 +142,14 @@ model Report {
 model ComplianceSnapshot {
   id               String       @id @default(cuid())
   organizationId   String       @unique
-  readinessScore   Int
+  readinessScore   Float
   riskLevel        String
   actionsCompleted Int          @default(0)
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
   highRiskCount    Int          @default(0)
   lastAssessmentAt DateTime?
-  scoreImprovement Int          @default(0)
+  scoreImprovement Float          @default(0)
   actionsPending   Int          @default(0)
   assessmentId     String
   assessment       Assessment   @relation(fields: [assessmentId], references: [id])
@@ -173,7 +173,7 @@ model ComplianceAction {
   organizationId   String
   title            String
   description      String
-  expectedIncrease Int
+  expectedIncrease Float
   status           String
   createdAt        DateTime     @default(now())
   remediationSteps String?

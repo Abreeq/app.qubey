@@ -70,13 +70,6 @@ export async function POST(req) {
     (snapshot?.readinessScore || 0) + action.expectedIncrease
   );
 
-  const highRiskOpen = await prisma.complianceAction.count({
-    where: {
-      organizationId: org.id,
-      status: { not: "COMPLETED" }
-    },
-  });
-
   const calculateRiskLevel = (score) => {
     if (score >= 71) return "Low";
     if (score >= 41) return "Medium";
@@ -87,7 +80,9 @@ export async function POST(req) {
     where: { organizationId: org.id },
     data: {
       readinessScore: newScore,
-      highRiskCount: highRiskOpen,
+      highRiskCount: {
+        decrement:1,
+      },
       actionsPending: {
         decrement: 1,
       },
