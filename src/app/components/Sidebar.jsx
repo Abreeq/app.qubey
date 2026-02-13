@@ -24,7 +24,7 @@ export default function Sidebar({collapsed, setCollapsed}) {
             <div className="h-14 flex items-center justify-between px-3 border-b border-purple-400">
                 {!collapsed && (
                     <span className="font-bold text-sm uppercase bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent tracking-wide">
-                        {session?.user?.organizations?.[0] || "Menu"}
+                        {session?.user?.organizations || "Menu"}
                     </span>
                 )}
                 <button
