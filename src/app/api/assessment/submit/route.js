@@ -68,7 +68,7 @@ export async function POST(req) {
       }
 
       if (ans.value === "YES") gained += q.weight;
-      else if (ans.value === "PARTIAL") gained += q.weight * 0.5;
+      else if (ans.value === "PARTIAL") gained += 2;
       else if (ans.value === "NO") openGaps += 1;
       else openGaps += 1;
     }
@@ -222,7 +222,7 @@ const actions = risks.map((r) => ({
   assessmentId,
   title: `Fix: ${r.title}`,
   description: "Implement required control to close this gap",
-  expectedIncrease: r.severity === "HIGH" ? 5 :  (5 * 0.5),
+  expectedIncrease: r.severity === "HIGH" ? 5 : 3,
   status: "PENDING",
 }));
 
