@@ -2,15 +2,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { GoogleGenAI } from "@google/genai";
+import { extractJSON } from "@/lib/extractJSON";
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
-
-function extractJSON(text) {
-  // Gemini sometimes returns ```json ... ```
-  return JSON.parse(text.replace(/```json/g, "").replace(/```/g, "").trim());
-}
 
 export async function POST(req) {
   const session = await getServerSession(authOptions);
