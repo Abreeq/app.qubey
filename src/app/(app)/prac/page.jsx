@@ -9,7 +9,7 @@ import { BsGraphUpArrow } from "react-icons/bs";
 import Link from 'next/link';
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { toast } from "react-toastify";
+
 
 export default function ActionPage() {
     const { actionId } = useParams();
@@ -17,68 +17,37 @@ export default function ActionPage() {
 
     const [loading, setLoading] = useState(true);
     const [action, setAction] = useState(null);
-    const [updating, setUpdating] = useState(null); // for button
 
     useEffect(() => {
-      if (!actionId) return;
-    
-      const load = async () => {
-        try {
-          setLoading(true);
-    
-          const res = await fetch(`/api/action/${actionId}`);
-          if (!res.ok) throw new Error("Failed to load action");
-    
-          const data = await res.json();
-          setAction(data.action);
-        } catch (err) {
-          console.error(err);
-          router.push("/dashboard");
-        } finally {
-          setLoading(false);
-        }
-      };
-    
-      load();
+        const load = async () => {
+            const res = await fetch(`/api/action/${actionId}`);
+            const data = await res.json();
+
+            if (!res.ok) {
+                router.push("/dashboard");
+                return;
+            }
+
+            setAction(data.action);
+            setLoading(false);
+        };
+
+        load();
     }, [actionId, router]);
 
 
     // for update
     const updateStatus = async (status) => {
-      if (updating) return;
-    
-      setUpdating(status);
-    
-      try {
-        const res = await fetch("/api/action/update-status", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ actionId, status }),
+        await fetch("/api/action/update-status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ actionId, status }),
         });
-    
-        if (!res.ok) throw new Error("Update failed");
-    
-        toast.success(
-          status === "COMPLETED" ? "Action completed 🎉 Great work!" : "Action marked in progress",
-          { autoClose: 1500 }
-        );
-    
-        // smoother UX than instant redirect
-        setTimeout(() => {
-          router.push("/dashboard");
-        }, 800);
-      } catch (error) {
-        toast.error(
-          "Unable to update action status. Please try again.",
-          { autoClose: 2000 }
-        );
-        
-      } finally {
-        setUpdating(null);
-      }
+
+        router.push("/dashboard");
     };
 
-    //   Page Loading State
+    //   Page Loading
     if (loading) {
         return (
             <section className="relative">
@@ -169,43 +138,6 @@ export default function ActionPage() {
         )
     }
 
-
-    if (!action || !action.remediationSteps?.length) {
-      return (
-        <main className="max-w-7xl mx-auto mt-12 relative overflow-hidden rounded-2xl bg-linear-to-tr from-purple-100 via-white to-white px-6 py-8">
-          <div className="absolute top-4 right-4 w-84 h-84 bg-purple-100 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-  
-          <div className="relative pb-1 sm:pb-6">
-            <div className="text-center space-y-4">
-              <h2 className={`font-semibold capitalize text-2xl sm:text-3xl bg-linear-to-r from-red-400 to-red-600 bg-clip-text text-transparent`}>
-                Oops! Something’s Missing
-              </h2>
-              <p className="text-base sm:text-lg text-gray-700 font-medium mt-1 max-w-3xl mx-auto">
-               We couldn’t load the details for this action right now. This may happen if the action was removed, is incomplete, or there was a temporary issue while fetching the data.
-              </p>
-              <p className="text-sm sm:text-base font-medium mt-1">
-                Please try again or return to your dashboard.
-              </p>
-  
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <button
-                  onClick={() => router.push("/dashboard")}
-                  className="cursor-pointer font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
-                >
-                  Go Back to Dashboard
-                </button>
-              </div>
-  
-              <p className="text-sm sm:text-base font-medium mt-1">
-                If the issue persists, please contact support.
-              </p>
-  
-            </div>
-          </div>
-        </main>
-      );
-    }
-
     return (
         <section className="py-8 space-y-5 sm:space-y-8 pr-1.5 max-w-7xl mx-auto">
             {/* Question  */}
@@ -234,22 +166,18 @@ export default function ActionPage() {
                     </div>
 
                     <div className="flex flex-col items-center gap-3">
-                        <button onClick={() => updateStatus("COMPLETED")} disabled={updating !== null}
-                            className="disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer rounded-4xl bg-linear-to-r from-[#441851] to-[#761be6] 
+                        <button onClick={() => updateStatus("COMPLETED")}
+                            className="cursor-pointer rounded-4xl bg-linear-to-r from-[#441851] to-[#761be6] 
                             px-3 md:px-4 py-2 flex items-center gap-2 hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
                             <FaCircleCheck className="size-4 text-white shrink-0" />
-                            <span className="md:font-medium text-white">
-                              {updating === "COMPLETED" ? "Saving..." : "Mark as Completed"}
-                            </span>
+                            <span className="md:font-medium text-white">Mark as Completed</span>
                         </button>
 
-                        <button onClick={() => updateStatus("IN_PROGRESS")} disabled={updating !== null}
-                            className="disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer rounded-4xl bg-slate-100/80 border border-gray-300
+                        <button onClick={() => updateStatus("IN_PROGRESS")}
+                            className="cursor-pointer rounded-4xl bg-slate-100/80 border border-gray-300
                           hover:bg-purple-100 hover:scale-95 px-3 md:px-4 py-2 flex items-center gap-2 transition-all duration-300">
                             <FaCirclePlay className="size-4 md:size-5 shrink-0" />
-                            <span className="md:font-medium">
-                              {updating === "IN_PROGRESS" ? "Saving..." : "Mark In Progress"}
-                            </span>
+                            <span className="md:font-medium">Mark In Progress</span>
                         </button>
                     </div>
                 </div>
@@ -325,7 +253,7 @@ export default function ActionPage() {
                     <div className='rounded-xl border border-dashed bg-purple-50 p-4 hover:shadow-md hover:shadow-purple-100 transition border-purple-200'>
                         <div className='relative border-l-2 border-purple-300 pl-7 mx-2 space-y-3'>
                             {Object.values(action.remediationSteps[0].remediationSteps).map((step, index) => (
-                                <div key={index} className="relative group">
+                                <div className="relative group">
                                     <div className="absolute -left-11.5 top-1.5 size-8 bg-purple-200 rounded-full 
                                      flex items-center justify-center text-purple-700 text-sm font-bold transition-all duration-300 ease-in-out 
                                      group-hover:bg-purple-700 group-hover:text-white">
@@ -336,6 +264,20 @@ export default function ActionPage() {
                                     </p>
                                 </div>
                             ))}
+
+
+                            {/* <div className="relative group">
+                                <div className="absolute -left-11.5 top-1.5 size-8 bg-purple-200 rounded-full 
+                             flex items-center justify-center text-purple-700 text-sm font-bold transition-all duration-300 ease-in-out 
+                             group-hover:bg-purple-700 group-hover:text-white">
+                                    1
+                                </div>
+                                <p className="text-sm sm:text-base font-medium text-gray-700 py-2">
+                                    Meet once a year or when you get new technology to review your list and
+                                    make sure your plan still works.
+                                </p>
+                            </div> */}
+
                         </div>
                     </div>
                 </div>
