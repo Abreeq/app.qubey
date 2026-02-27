@@ -26,7 +26,6 @@ export default function AssessmentPage() {
 
   const [responseText, setResponseText] = useState("");
   const [assessmentStatus, setAssessmentStatus] = useState("");
-  const [loadingMode, setLoadingMode] = useState(null);  // new or resumed
 
 
   // for auto clearing the responseText
@@ -52,9 +51,6 @@ export default function AssessmentPage() {
 
     setStarting(true);
     setLoading(true);
-
-    setLoadingMode(forceNew ? "new" : "resume");
-
     setAssessment(null);
     setAssessmentId(null);
     setIndex(0);
@@ -70,11 +66,7 @@ export default function AssessmentPage() {
       });
 
       const data = await res.json();
-
-      if (!res.ok && !forceNew) {
-        return startAssessment({ forceNew: true });
-      }
-      
+ 
       if (!res.ok) {
         toast.error(data.error || "Failed to start assessment");
         router.push("/dashboard");
@@ -365,13 +357,12 @@ export default function AssessmentPage() {
 
             {/* Heading */}
             <h2 className="text-2xl font-semibold bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">
-              {loadingMode === "new" ? "Generating Your Assessment..." : "Restoring Your Assessment..."}
+              Loading Your Assessment...
             </h2>
 
             {/* Description */}
             <p className="text-gray-600 font-medium">
-                {loadingMode === "new" ? "We're preparing a personalized compliance assessment for you. This will only take a moment."
-                 : "Restoring your previous assessment session."}
+              We're preparing a personalized compliance assessment for you. This will only take a moment.
             </p>
 
             {/* Subtle bouncing dots */}
