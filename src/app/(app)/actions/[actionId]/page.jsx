@@ -245,7 +245,7 @@ export default function ActionPage() {
 
                         <button onClick={() => updateStatus("IN_PROGRESS")} disabled={updating !== null}
                             className="disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer rounded-4xl bg-slate-100/80 border border-gray-300
-                          hover:bg-purple-100 hover:scale-95 px-3 md:px-4 py-2 flex items-center gap-2 transition-all duration-300">
+                             shadow-md hover:bg-[#761be6] hover:text-white hover:scale-95 px-3 md:px-4 py-2 flex items-center gap-2 transition-all duration-300">
                             <FaCirclePlay className="size-4 md:size-5 shrink-0" />
                             <span className="md:font-medium">
                               {updating === "IN_PROGRESS" ? "Saving..." : "Mark In Progress"}

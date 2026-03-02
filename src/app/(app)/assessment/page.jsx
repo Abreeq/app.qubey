@@ -442,14 +442,14 @@ export default function AssessmentPage() {
         <div className="flex flex-col items-end gap-4 justify-start">
           <div className="flex flex-col xl:flex-row items-center gap-4">
             {assessmentStatus && (
-              <p className="rounded-4xl text-sm sm:font-medium bg-slate-100/80 border border-gray-300 px-3 py-1">
+              <p className="rounded-4xl text-sm sm:font-medium bg-slate-100/80 border border-purple-300 px-3 md:px-4 py-2">
                 {assessmentStatus}
               </p>
             )}
 
             <button onClick={() => startAssessment({ forceNew: true })} disabled={starting || finalSubmit}
               className="disabled:opacity-80 disabled:cursor-not-allowed cursor-pointer rounded-4xl bg-linear-to-r from-[#441851] to-[#761be6] 
-              px-3 py-1.5 hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
+              px-3 md:px-4 py-2 hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
               <span className="sm:font-medium text-sm text-white">{starting ? "Starting..." : "Run New Assessment"}</span>
             </button>
           </div>
