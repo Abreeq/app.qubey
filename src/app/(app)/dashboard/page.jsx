@@ -141,8 +141,8 @@ export default function DashboardPage() {
 
         <div className="flex flex-col items-end gap-4 justify-start">
           <div className="flex flex-col lg:flex-row items-center gap-4">
-            <button className="cursor-pointer rounded-4xl bg-slate-100/80 border border-gray-300
-              hover:bg-purple-100 hover:scale-95 px-3 md:px-4 py-2 flex items-center gap-2 transition-all duration-300">
+            <button className="cursor-pointer rounded-4xl bg-slate-100/80 border border-gray-300 shadow-md
+              hover:bg-[#761be6] hover:text-white hover:scale-95 px-3 md:px-4 py-2 flex items-center gap-2 transition-all duration-300">
               <MdOutlineFileDownload className="size-4 md:size-5 shrink-0" />
               <span className="md:font-medium">Export Report</span>
             </button>

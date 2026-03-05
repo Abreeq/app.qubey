@@ -7,6 +7,7 @@ import gsap from "gsap";
 import { RiMenu3Fill } from "react-icons/ri";
 import { signIn, useSession } from "next-auth/react";
 import ProfileDropdown from "./ProfileDropdown";
+import { LuCrown } from "react-icons/lu";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
@@ -89,7 +90,18 @@ export default function Navbar() {
         </nav>
 
         {/* Desktop Actions */}
-        <div ref={ctaRef} className="hidden lg:flex items-center gap-6">
+        <div ref={ctaRef} className="hidden lg:flex items-center gap-4">
+          <button className="cursor-pointer rounded-lg bg-slate-100/80 border border-purple-300
+             hover:bg-[#761be6] hover:text-white hover:scale-95 px-3 py-1.5 flex items-center gap-2 transition-all duration-300">
+            <LuCrown className="shrink-0" />
+            <span className="text-sm font-medium">Upgrade</span>
+          </button>
+
+          <button className="cursor-pointer rounded-lg bg-yellow-200/80 border border-yellow-600
+            hover:scale-95 px-3 py-1.5 flex items-center gap-2 transition-all duration-300">
+            <LuCrown className="shrink-0 text-yellow-600" />
+            <span className="text-sm font-medium">Pro</span>
+          </button>
           {
             status === "loading" ? null : session?.user ? (
               <ProfileDropdown user={session.user} />
