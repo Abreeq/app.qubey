@@ -118,8 +118,8 @@ Generate a compliance report for a business based on assessment results.
 Return ONLY JSON:
 {
   "summary": "...",
-  "keyFindings": "...",
-  "recommendations": "..."
+  "keyFindings": {"{},{},{}..."},
+  "recommendations":{"{},{},{}..."}
 }
 
 Inputs:
@@ -166,8 +166,8 @@ ${JSON.stringify(weakQuestions, null, 2)}
         riskLevel,
         openGaps,
         summary: report.summary,
-        keyFindings: report.keyFindings,
-        recommendations: report.recommendations,
+        keyFindings: JSON.stringify(report.keyFindings),
+        recommendations: JSON.stringify(report.recommendations),
       },
       create: {
         userId: session.user.id,
@@ -177,8 +177,8 @@ ${JSON.stringify(weakQuestions, null, 2)}
         riskLevel,
         openGaps,
         summary: report.summary,
-        keyFindings: report.keyFindings,
-        recommendations: report.recommendations,
+        keyFindings: JSON.stringify(report.keyFindings),
+        recommendations: JSON.stringify(report.recommendations),
       },
     });
 

@@ -28,5 +28,11 @@ export async function GET() {
     return Response.json({ error: "No report found" }, { status: 404 });
   }
 
-  return Response.json({ report });
+  return Response.json({ 
+    report: {
+      ...report,
+      keyFindings: JSON.parse(report.keyFindings || "[]"),
+      recommendations: JSON.parse(report.recommendations || "[]"),
+    }
+   });
 }
