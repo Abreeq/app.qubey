@@ -410,7 +410,7 @@ export default function DashboardPage() {
                   {showAll
                     ? "Show fewer actions"
                     : `View all ${nextAction.length} pending actions`}
-                  <FaArrowRight className={`transition-transform ${showAll ? "rotate-90" : ""}`} />
+                  <FaArrowRight className={`transition-transform ${showAll ? "-rotate-90" : "rotate-90"}`} />
                 </button>
               </div>
             )}

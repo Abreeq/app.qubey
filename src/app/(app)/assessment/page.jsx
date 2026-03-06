@@ -27,6 +27,38 @@ export default function AssessmentPage() {
   const [responseText, setResponseText] = useState("");
   const [assessmentStatus, setAssessmentStatus] = useState("");
 
+  const [loadingProgress, setLoadingProgress] = useState(0);
+
+  useEffect(() => {
+    if (!loading) {
+      setLoadingProgress(100);
+      return;
+    }
+
+    setLoadingProgress(0); // reset when loading starts
+
+    const interval = setInterval(() => {
+      setLoadingProgress((prev) => {
+        if (prev >= 90) return prev;
+
+        let increment;
+
+        if (prev < 30) {
+          increment = Math.random() * 8 + 2; // fast start
+        }
+        else if (prev < 60) {
+          increment = Math.random() * 4 + 1; // medium
+        }
+        else {
+          increment = Math.random() * 2; // slow end
+        }
+
+        return Math.min(prev + increment, 90);
+      });
+    }, 300); // faster updates
+
+    return () => clearInterval(interval);
+  }, [loading]);
 
   // for auto clearing the responseText
   useEffect(() => {
@@ -66,7 +98,7 @@ export default function AssessmentPage() {
       });
 
       const data = await res.json();
- 
+
       if (!res.ok) {
         toast.error(data.error || "Failed to start assessment");
         router.push("/dashboard");
@@ -96,7 +128,7 @@ export default function AssessmentPage() {
     try {
       const res = await fetch(`/api/assessment/${id}`);
       const data = await res.json();
-
+      console.log(data);
       if (!res.ok) {
         toast.error(data.error || "Failed to load assessment");
         router.push("/dashboard");
@@ -352,13 +384,20 @@ export default function AssessmentPage() {
         {/* Overlay generating message */}
         <div className="absolute inset-0 z-20 flex items-center justify-center px-6">
           <div className="bg-white border border-gray-100 flex flex-col items-center rounded-3xl shadow-xl p-8 text-center space-y-4 max-w-md w-full">
-            {/* Spinner */}
-            <div className="h-12 w-12 rounded-full border-4 border-purple-200 border-t-purple-600 animate-spin" />
 
             {/* Heading */}
-            <h2 className="text-2xl font-semibold bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">
-              Loading Your Assessment...
-            </h2>
+            <div className="w-full flex justify-between items-center mb-3">
+              <h2 className="text-2xl font-semibold bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">
+                Preparing Your Assessment...
+              </h2>
+              <span className="text-sm font-medium text-gray-600 tabular-nums">{Math.floor(loadingProgress)}%</span>
+            </div>
+            <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-linear-to-r from-[#761be6] to-[#441851] transition-all duration-500"
+                style={{ width: `${loadingProgress}%` }}
+              />
+            </div>
 
             {/* Description */}
             <p className="text-gray-600 font-medium">

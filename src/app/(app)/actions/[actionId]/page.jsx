@@ -19,63 +19,120 @@ export default function ActionPage() {
     const [action, setAction] = useState(null);
     const [updating, setUpdating] = useState(null); // for button
 
+    const [progress, setProgress] = useState(0);
+
+    const loadingMessages = [
+        "Analyzing compliance control...",
+        "Evaluating potential security risks...",
+        "Mapping regulatory impact...",
+        "Generating remediation guidance...",
+        "Building recommended action steps...",
+        "Preparing your compliance improvement plan..."
+    ];
+
+    const [messageIndex, setMessageIndex] = useState(0);
+
     useEffect(() => {
-      if (!actionId) return;
-    
-      const load = async () => {
-        try {
-          setLoading(true);
-    
-          const res = await fetch(`/api/action/${actionId}`);
-          if (!res.ok) throw new Error("Failed to load action");
-    
-          const data = await res.json();
-          setAction(data.action);
-        } catch (err) {
-          console.error(err);
-          router.push("/dashboard");
-        } finally {
-          setLoading(false);
+        if (!loading) return;
+
+        if (progress < 15) setMessageIndex(0);
+        else if (progress < 30) setMessageIndex(1);
+        else if (progress < 50) setMessageIndex(2);
+        else if (progress < 70) setMessageIndex(3);
+        else if (progress < 85) setMessageIndex(4);
+        else setMessageIndex(5);
+
+    }, [progress, loading]);
+
+    useEffect(() => {
+        if (!loading) {
+            setMessageIndex(5);
+            setProgress(100);
+            return;
         }
-      };
-    
-      load();
+
+        setProgress(0); // reset when loading starts
+
+        const interval = setInterval(() => {
+            setProgress((prev) => {
+                if (prev >= 90) return prev;
+            
+                let increment;
+
+                if (prev < 30) {
+                  increment = Math.random() * 8 + 2; // fast start
+                } 
+                else if (prev < 60) {
+                  increment = Math.random() * 4 + 1; // medium
+                } 
+                else {
+                  increment = Math.random() * 2; // slow end
+                }
+          
+                return Math.min(prev + increment, 90);
+              });
+            }, 600); // faster updates
+
+        return () => clearInterval(interval);
+    }, [loading]);
+
+    useEffect(() => {
+        if (!actionId) return;
+
+        const load = async () => {
+            try {
+                setLoading(true);
+
+                const res = await fetch(`/api/action/${actionId}`);
+                if (!res.ok) throw new Error("Failed to load action");
+
+                const data = await res.json();
+                setAction(data.action);
+            } catch (err) {
+                console.error(err);
+                router.push("/dashboard");
+            } finally {
+                  setLoading(false);
+            }
+        };
+
+        load();
     }, [actionId, router]);
 
 
     // for update
     const updateStatus = async (status) => {
-      if (updating) return;
-    
-      setUpdating(status);
-    
-      try {
-        const res = await fetch("/api/action/update-status", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ actionId, status }),
-        });
-    
-        if (!res.ok) throw new Error("Update failed");
-    
-        toast.success(
-          status === "COMPLETED" ? "Action completed 🎉 Great work!" : "Action marked in progress",
-          { autoClose: 1500 }
-        );
-    
-        // smoother UX than instant redirect
-        setTimeout(() => {
-          router.push("/dashboard");
-        }, 800);
-      } catch (error) {
-        toast.error(
-          "Unable to update action status. Please try again.",
-          { autoClose: 2000 }
-        );
-        
-      } finally {
-        setUpdating(null);
-      }
+        if (updating) return;
+
+        setUpdating(status);
+
+        try {
+            const res = await fetch("/api/action/update-status", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ actionId, status }),
+            });
+
+            if (!res.ok) throw new Error("Update failed");
+
+            toast.success(
+                status === "COMPLETED" ? "Action completed 🎉 Great work!" : "Action marked in progress",
+                { autoClose: 1500 }
+            );
+
+            // smoother UX than instant redirect
+            setTimeout(() => {
+                router.push("/dashboard");
+            }, 800);
+        } catch (error) {
+            toast.error(
+                "Unable to update action status. Please try again.",
+                { autoClose: 2000 }
+            );
+
+        } finally {
+            setUpdating(null);
+        }
     };
 
     //   Page Loading State
@@ -144,17 +201,28 @@ export default function ActionPage() {
                 {/* Overlay generating message */}
                 <div className="absolute inset-0 z-20 flex items-center justify-center px-6">
                     <div className="bg-white border border-gray-100 flex flex-col items-center rounded-3xl shadow-xl p-8 text-center space-y-4 max-w-md w-full">
-                        {/* Spinner */}
-                        <div className="h-12 w-12 rounded-full border-4 border-purple-200 border-t-purple-600 animate-spin" />
 
                         {/* Heading */}
-                        <h2 className="text-2xl font-semibold bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">
-                            Loading Action Details...
-                        </h2>
+                        <div className="w-full flex justify-between items-center mb-3">
+                            <h2 className="text-2xl font-semibold bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">
+                                Preparing Action Guidance...
+                            </h2>
+                            <span className="text-sm font-medium text-gray-600 tabular-nums">{Math.floor(progress)}%</span>
+                        </div>
+                        <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-linear-to-r from-[#761be6] to-[#441851] transition-all duration-500"
+                                style={{ width: `${progress}%` }}
+                            />
+                        </div>
 
                         {/* Description */}
                         <p className="text-gray-600 font-medium">
-                            Retrieving risk context, summary, and next steps. This will only take a moment.
+                            Retrieving risk context, summary, and next steps. This usually takes 5–10 seconds.
+                        </p>
+
+                        <p className="text-gray-600 font-medium min-h-12 transition-opacity duration-300">
+                            {loadingMessages[messageIndex]}
                         </p>
 
                         {/* Subtle bouncing dots */}
@@ -171,39 +239,39 @@ export default function ActionPage() {
 
 
     if (!action || !action.remediationSteps?.length) {
-      return (
-        <main className="max-w-7xl mx-auto mt-12 relative overflow-hidden rounded-2xl bg-linear-to-tr from-purple-100 via-white to-white px-6 py-8">
-          <div className="absolute top-4 right-4 w-84 h-84 bg-purple-100 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-  
-          <div className="relative pb-1 sm:pb-6">
-            <div className="text-center space-y-4">
-              <h2 className={`font-semibold capitalize text-2xl sm:text-3xl bg-linear-to-r from-red-400 to-red-600 bg-clip-text text-transparent`}>
-                Oops! Something’s Missing
-              </h2>
-              <p className="text-base sm:text-lg text-gray-700 font-medium mt-1 max-w-3xl mx-auto">
-               We couldn’t load the details for this action right now. This may happen if the action was removed, is incomplete, or there was a temporary issue while fetching the data.
-              </p>
-              <p className="text-sm sm:text-base font-medium mt-1">
-                Please try again or return to your dashboard.
-              </p>
-  
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <button
-                  onClick={() => router.push("/dashboard")}
-                  className="cursor-pointer font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
-                >
-                  Go Back to Dashboard
-                </button>
-              </div>
-  
-              <p className="text-sm sm:text-base font-medium mt-1">
-                If the issue persists, please contact support.
-              </p>
-  
-            </div>
-          </div>
-        </main>
-      );
+        return (
+            <main className="max-w-7xl mx-auto mt-12 relative overflow-hidden rounded-2xl bg-linear-to-tr from-purple-100 via-white to-white px-6 py-8">
+                <div className="absolute top-4 right-4 w-84 h-84 bg-purple-100 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+
+                <div className="relative pb-1 sm:pb-6">
+                    <div className="text-center space-y-4">
+                        <h2 className={`font-semibold capitalize text-2xl sm:text-3xl bg-linear-to-r from-red-400 to-red-600 bg-clip-text text-transparent`}>
+                            Oops! Something’s Missing
+                        </h2>
+                        <p className="text-base sm:text-lg text-gray-700 font-medium mt-1 max-w-3xl mx-auto">
+                            We couldn’t load the details for this action right now. This may happen if the action was removed, is incomplete, or there was a temporary issue while fetching the data.
+                        </p>
+                        <p className="text-sm sm:text-base font-medium mt-1">
+                            Please try again or return to your dashboard.
+                        </p>
+
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                            <button
+                                onClick={() => router.push("/dashboard")}
+                                className="cursor-pointer font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
+                            >
+                                Go Back to Dashboard
+                            </button>
+                        </div>
+
+                        <p className="text-sm sm:text-base font-medium mt-1">
+                            If the issue persists, please contact support.
+                        </p>
+
+                    </div>
+                </div>
+            </main>
+        );
     }
 
     return (
@@ -239,7 +307,7 @@ export default function ActionPage() {
                             px-3 md:px-4 py-2 flex items-center gap-2 hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
                             <FaCircleCheck className="size-4 text-white shrink-0" />
                             <span className="md:font-medium text-white">
-                              {updating === "COMPLETED" ? "Saving..." : "Mark as Completed"}
+                                {updating === "COMPLETED" ? "Saving..." : "Mark as Completed"}
                             </span>
                         </button>
 
@@ -248,7 +316,7 @@ export default function ActionPage() {
                              shadow-md hover:bg-[#761be6] hover:text-white hover:scale-95 px-3 md:px-4 py-2 flex items-center gap-2 transition-all duration-300">
                             <FaCirclePlay className="size-4 md:size-5 shrink-0" />
                             <span className="md:font-medium">
-                              {updating === "IN_PROGRESS" ? "Saving..." : "Mark In Progress"}
+                                {updating === "IN_PROGRESS" ? "Saving..." : "Mark In Progress"}
                             </span>
                         </button>
                     </div>
@@ -329,7 +397,7 @@ export default function ActionPage() {
                                     <div className="absolute -left-11.5 top-1.5 size-8 bg-purple-200 rounded-full 
                                      flex items-center justify-center text-purple-700 text-sm font-bold transition-all duration-300 ease-in-out 
                                      group-hover:bg-purple-700 group-hover:text-white">
-                                        {index+1}
+                                        {index + 1}
                                     </div>
                                     <p className="text-sm sm:text-base font-medium text-gray-700 py-2">
                                         {step}

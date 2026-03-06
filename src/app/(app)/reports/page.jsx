@@ -12,7 +12,7 @@ export default function ReportsPage() {
     const load = async () => {
       const res = await fetch("/api/report/latest");
       const data = await res.json();
-
+console.log(data);
       if (!res.ok) {
         toast.info("No report found. Please complete an assessment first.");
         setLoading(false);
