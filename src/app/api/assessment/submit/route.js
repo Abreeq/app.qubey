@@ -118,8 +118,8 @@ Generate a compliance report for a business based on assessment results.
 Return ONLY JSON:
 {
   "summary": "...",
-  "keyFindings": {"{},{},{}..."},
-  "recommendations":{"{},{},{}..."}
+  "keyFindings": {{{"category":"..."},{"description":"..."},{"complianceImpact":"..."},{"riskLevel":" HIGH | MEDIUM | LOW "}},{...},{...}..."},
+  "recommendations":{{{"category":"..."},{"description":"..."},{"recommendation":"..."}} , {...}..."}
 }
 
 Inputs:
