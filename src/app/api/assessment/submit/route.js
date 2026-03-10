@@ -118,8 +118,34 @@ Generate a compliance report for a business based on assessment results.
 Return ONLY JSON:
 {
   "summary": "...",
-  "keyFindings": {{{"category":"..."},{"description":"..."},{"complianceImpact":"..."},{"riskLevel":" HIGH | MEDIUM | LOW "}},{...},{...}..."},
-  "recommendations":{{{"category":"..."},{"description":"..."},{"recommendation":"..."}} , {...}..."}
+  "keyFindings": {
+    "domain_key": {
+      "domainName": "Access Control" | "Data" | "Network" | "Policy" | "Incident" | "Vendor",
+      "severity": "CRITICAL | HIGH | MEDIUM | LOW",
+      "totalGaps": number,
+
+      "gaps": {
+        "gap_id": {
+          "title": "Short title of the compliance gap",
+          "description": "Detailed explanation of the compliance gap and why it matters",
+        }
+      }
+    }
+  },
+  "recommendations": {
+    "domain_key": {
+      "domainName": "Access Control" | "Data" | "Network" | "Policy" | "Incident" | "Vendor",
+      "priority": " High | Medium | Low",
+      "totalRecommendations": number,
+
+      "recommendation": {
+        "recommendation_id": {
+          "title": "Short title of the recommendation",
+          "description": "Detailed explanation of the recommendation",
+        }
+      }
+    }
+  }
 }
 
 Inputs:
@@ -220,7 +246,7 @@ if (risks.length) {
 const actions = risks.map((r) => ({
   organizationId: assessment.organizationId,
   assessmentId,
-  title: `Fix: ${r.title}`,
+  title: `${r.title}`,
   description: "Implement required control to close this gap",
   expectedIncrease: r.severity === "HIGH" ? 5 : 5/2,
   status: "PENDING",
