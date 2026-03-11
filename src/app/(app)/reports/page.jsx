@@ -1,181 +1,694 @@
 "use client";
 
+import { FaCalendarDays, FaRegFileLines } from "react-icons/fa6";
+import { MdOutlineFileDownload } from "react-icons/md";
+import { FaHistory, FaClipboardList, FaTools, FaInfoCircle, FaShieldAlt } from "react-icons/fa";
+import { TbInfoTriangleFilled, TbNetwork } from "react-icons/tb";
+import { IoShieldCheckmarkSharp } from "react-icons/io5";
+import { HiUsers } from "react-icons/hi2";
+import { RiLockPasswordFill } from "react-icons/ri";
+
 import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
 import Link from "next/link";
 
+
 export default function ReportsPage() {
-  const [loading, setLoading] = useState(true);
-  const [report, setReport] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [report, setReport] = useState(null);
+    const [pdfLoading, setPdfLoading] = useState(false);
+    const [pdfError, setPdfError] = useState(null);
+    const [loadingProgress, setLoadingProgress] = useState(0);
 
-  useEffect(() => {
-    const load = async () => {
-      const res = await fetch("/api/report/latest");
-      const data = await res.json();
-console.log(data);
-      if (!res.ok) {
-        toast.info("No report found. Please complete an assessment first.");
-        setLoading(false);
-        return;
-      }
+    // loader
+    useEffect(() => {
+        if (!loading) {
+            setLoadingProgress(100);
+            return;
+        }
 
-      setReport(data.report);
-      setLoading(false);
-    };
+        setLoadingProgress(0); // reset when loading starts
 
-    load();
-  }, []);
+        const interval = setInterval(() => {
+            setLoadingProgress((prev) => {
+                if (prev >= 90) return prev;
 
-  if (loading) {
+                let increment;
+
+                if (prev < 30) {
+                    increment = Math.random() * 8 + 2; // fast start
+                }
+                else if (prev < 60) {
+                    increment = Math.random() * 4 + 1; // medium
+                }
+                else {
+                    increment = Math.random() * 2; // slow end
+                }
+
+                return Math.min(prev + increment, 90);
+            });
+        }, 300); // faster updates
+
+        return () => clearInterval(interval);
+    }, [loading]);
+
+
+    // for actual data
+    useEffect(() => {
+        const load = async () => {
+            try {
+                const res = await fetch("/api/report/latest");
+
+                if (!res.ok) {
+                    setReport(null);
+                    setLoading(false);
+                    return;
+                }
+                const data = await res.json();
+
+                setReport(data.report);
+                setLoading(false);
+            } catch (error) {
+                setReport(null);
+            }
+        };
+
+        load();
+    }, []);
+
+
+    // for pdf download
+    const handleDownload = async () => {
+        try {
+            setPdfLoading(true);
+            setPdfError(null);
+
+            const res = await fetch("/api/report/pdf");
+            if (!res.ok) {
+                throw new Error("PDF generation failed");
+            }
+
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "Qubey_Compliance_Report.pdf";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+
+            window.URL.revokeObjectURL(url);
+
+        } catch (error) {
+            setPdfError("Unable to generate PDF. Please try again.");
+        } finally {
+            setPdfLoading(false);
+        }
+    }
+
+    // loading state
+    if (loading) {
+        return (
+            <section className="relative">
+                {/* Skeleton background */}
+                <div className="pt-12 pb-8 space-y-7 sm:space-y-12 pr-1.5 max-w-7xl mx-auto">
+                    {/* ===== Page Heading Skeleton ===== */}
+                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-4 items-center">
+                        <div className="space-y-3">
+                            <div className="h-8 sm:h-10 w-3/4 rounded-lg bg-gray-200" />
+                            <div className="h-4 sm:h-5 w-2/3 rounded bg-gray-200" />
+                        </div>
+
+                        <div className="flex flex-col items-end gap-4">
+                            <div className="flex gap-3">
+                                <div className="h-9 w-36 rounded-full bg-gray-200" />
+                                <div className="h-9 w-32 rounded-full bg-gray-200" />
+                            </div>
+                            <div className="h-4 w-56 rounded bg-gray-200" />
+                        </div>
+                    </div>
+
+                    {/* ===== Cards Skeleton ===== */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
+                        {[...Array(4)].map((_, i) => (
+                            <div
+                                key={i}
+                                className="h-full rounded-3xl border border-gray-200 bg-white/50 p-4 sm:p-5 space-y-4"
+                            >
+                                {/* Header */}
+                                <div className="flex items-center gap-2">
+                                    <div className="h-5 w-5 rounded bg-gray-200" />
+                                    <div className="h-5 w-32 rounded bg-gray-200" />
+                                </div>
+
+                                <div className="h-px w-full bg-gray-200" />
+
+                                {/* Main Value */}
+                                <div className="h-16 w-20 rounded bg-gray-200" />
+
+                                {/* Description */}
+                                <div className="space-y-2">
+                                    <div className="h-3 w-full rounded bg-gray-200" />
+                                    <div className="h-3 w-5/6 rounded bg-gray-200" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* ===== Summary Skeleton ===== */}
+                    <div className="relative overflow-hidden rounded-2xl shadow-lg bg-white px-6 pt-8 pb-6 space-y-4">
+                        <div className="flex items-center gap-3">
+                            <div className="h-12 w-12 rounded-full bg-gray-200" />
+                            <div className="space-y-2">
+                                <div className="h-5 w-48 rounded bg-gray-200" />
+                                <div className="h-4 w-64 rounded bg-gray-200" />
+                            </div>
+                        </div>
+
+                        <div className="h-px w-full bg-gray-200" />
+
+                        <div className="space-y-3">
+                            <div className="h-4 w-full rounded bg-gray-200" />
+                            <div className="h-4 w-full rounded bg-gray-200" />
+                            <div className="h-4 w-5/6 rounded bg-gray-200" />
+                        </div>
+                    </div>
+
+                </div>
+
+                {/* Blur Overlay */}
+                <div className="absolute inset-0 bg-white/20 backdrop-blur-sm z-10 animate-pulse" />
+
+                {/* Overlay generating message */}
+                <div className="absolute inset-0 z-20 flex items-center justify-center px-6">
+                    <div className="bg-white border border-gray-100 flex flex-col items-center rounded-3xl shadow-xl p-8 text-center space-y-4 max-w-md w-full">
+                        {/* Heading */}
+                        <div className="w-full flex justify-between items-center mb-3">
+                            <h2 className="text-2xl font-semibold bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">
+                                Preparing Your Report...
+                            </h2>
+                            <span className="text-sm font-medium text-gray-600 tabular-nums">{Math.floor(loadingProgress)}%</span>
+                        </div>
+                        <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-linear-to-r from-[#761be6] to-[#441851] transition-all duration-500"
+                                style={{ width: `${loadingProgress}%` }}
+                            />
+                        </div>
+
+                        {/* Description */}
+                        <p className="text-gray-600 font-medium">
+                            Retrieving your latest compliance scores, risk levels, and key findings. <br />
+                            <span className="text-gray-500">This won't take long</span>
+                        </p>
+
+                        {/* Subtle bouncing dots */}
+                        <div className="flex justify-center gap-1">
+                            <span className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" />
+                            <span className="w-2 h-2 bg-purple-600 rounded-full animate-bounce delay-150" />
+                            <span className="w-2 h-2 bg-purple-600 rounded-full animate-bounce delay-300" />
+                        </div>
+                    </div>
+                </div>
+            </section>
+        );
+    }
+
+    if (!report) {
+        return (
+            <main className="max-w-7xl mx-auto mt-12 relative overflow-hidden rounded-2xl bg-linear-to-tr from-purple-100 via-white to-white px-6 py-8">
+                <div className="absolute top-4 right-4 w-84 h-84 bg-purple-100 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+
+                <div className="relative pb-1 sm:pb-6">
+                    <div className="text-center space-y-4">
+                        <h2 className={`font-semibold capitalize text-2xl sm:text-3xl bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent leading-tight`}>
+                            No Compliance Report Yet
+                        </h2>
+                        <p className="text-base sm:text-lg text-gray-700 font-medium mt-1 max-w-3xl mx-auto">
+                            Your compliance report will be generated once you complete a compliance assessment.
+                        </p>
+                        <p className="text-sm sm:text-base font-medium mt-1">
+                            Start an assessment to receive compliance scores, risk insights, and actionable recommendations.
+                        </p>
+
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                            <Link href="/assessment"
+                                className="rounded-xl bg-linear-to-r from-[#441851] to-[#761be6] text-white
+                                px-4 py-2 hover:from-[#5e1dbf] hover:to-[#8b2bf0] font-medium transition"
+                            >
+                                Start Assessment
+                            </Link>
+
+                            <Link href="/dashboard"
+                                className="font-medium px-4 py-2 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
+                            >
+                                Go Back to Dashboard
+                            </Link>
+                        </div>
+
+                        <p className="text-sm sm:text-base font-medium mt-1">
+                            Reports are generated automatically after each completed assessment.
+                        </p>
+
+                    </div>
+                </div>
+            </main>
+        );
+    }
+
     return (
-      <main className="max-w-4xl mx-auto px-6 py-10">
-        {/* Header skeleton */}
-        <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 animate-pulse">
-          <div className="space-y-2">
-            <div className="h-6 w-56 bg-gray-200 rounded" />
-            <div className="h-4 w-40 bg-gray-200 rounded" />
-          </div>
+        <section className="pt-6 pb-8 space-y-7 sm:space-y-12 pr-1.5 max-w-7xl mx-auto">
+            {/* Page Heading */}
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-4 items-center">
+                <div className="flex flex-col gap-1">
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl capitalize font-bold mt-2 bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent leading-tight">
+                        Compliance Assessment Report
+                    </h1>
+                    <p className="font-medium text-base sm:text-lg max-w-2xl">
+                        Snapshot of your organization’s cybersecurity and regulatory compliance posture.
+                    </p>
+                </div>
 
-          <div className="flex gap-3">
-            <div className="h-10 w-28 bg-gray-200 rounded" />
-            <div className="h-10 w-40 bg-gray-200 rounded" />
-          </div>
-        </div>
+                <div className="flex flex-col items-end gap-4 justify-start">
+                    <div className="flex flex-col xl:flex-row items-center gap-4">
+                        <button type="button" onClick={handleDownload} disabled={pdfLoading}
+                            className="disabled:cursor-not-allowed disabled:opacity-70 cursor-pointer rounded-4xl bg-slate-100/80 border border-gray-300 shadow-md
+                          hover:bg-[#761be6] hover:text-white hover:scale-95 px-3 md:px-4 py-2 flex items-center gap-2 transition-all duration-300">
+                            {pdfLoading ? (
+                                <>
+                                    <span className="h-4 w-4 rounded-full border-2 border-gray-400 border-t-transparent animate-spin" />
+                                    <span className="text-sm sm:text-base md:font-medium">Preparing PDF…</span>
+                                </>
+                            ) : (
+                                <>
+                                    <MdOutlineFileDownload className="size-4 md:size-5 shrink-0" />
+                                    <span className="text-sm sm:text-base md:font-medium">Export Report</span>
+                                </>
+                            )}
+                        </button>
 
-        {/* Stats skeleton */}
-        <div className="grid md:grid-cols-3 gap-5 mt-8">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="border rounded-xl bg-white p-6 animate-pulse"
-            >
-              <div className="h-4 w-32 bg-gray-200 rounded" />
-              <div className="h-8 w-20 bg-gray-200 rounded mt-4" />
+                        <Link href="/reports/history" className="rounded-4xl bg-linear-to-r from-[#441851] to-[#761be6] 
+                         px-3 md:px-4 py-2 flex items-center gap-2 hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
+                            <FaHistory className="size-3 sm:size-4 text-white shrink-0" />
+                            <span className="text-sm sm:text-base md:font-medium text-white">View History</span>
+                        </Link>
+                    </div>
+
+                    {pdfError && (
+                        <p className="text-sm font-medium text-red-600">
+                            {pdfError}
+                        </p>
+                    )}
+
+                    {/* Assessment Created at*/}
+                    <p className="flex items-center gap-2 font-medium text-sm text-gray-700">
+                        <FaCalendarDays className="size-3 text-[rgb(var(--light-purple))]" />
+                        Report Generated on: {" "} {report.createdAt
+                            ? new Date(report.createdAt).toLocaleString("en-US", {
+                                month: "long",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hour12: true,
+                            })
+                            : "Not Created yet"}
+                    </p>
+                </div>
             </div>
-          ))}
-        </div>
 
-        {/* Sections skeleton */}
-        <section className="mt-10 animate-pulse">
-          <div className="h-5 w-40 bg-gray-200 rounded" />
+            {/* Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
+                <div className="relative z-10">
+                    <div className="h-full flex flex-col bg-white/50 backdrop-blur-2xl rounded-3xl shadow-[0_20px_40px_rgba(118,27,230,0.12)] border border-gray-200 p-4 sm:p-5">
+                        {/* Header */}
+                        <h2 className="font-semibold text-lg sm:text-2xl flex items-center gap-2">
+                            <FaShieldAlt className="size-4 sm:size-5 text-[rgb(var(--light-purple))] shrink-0" />
+                            <span className="bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">Compliance Score</span>
+                        </h2>
+                        <div className="border-b border-purple-300 my-3"></div>
 
-          <div className="mt-3 border rounded-xl bg-white p-6 space-y-3">
-            <div className="h-4 w-full bg-gray-200 rounded" />
-            <div className="h-4 w-full bg-gray-200 rounded" />
-            <div className="h-4 w-11/12 bg-gray-200 rounded" />
-            <div className="h-4 w-5/6 bg-gray-200 rounded" />
-          </div>
+                        {/* Progress Value */}
+                        <div className="flex flex-col items-center justify-center">
+                            <div className="relative flex items-center justify-center w-20 sm:w-28 h-20 sm:h-28 shrink-0">
+                                <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                                    <circle
+                                        r="40"
+                                        cx="50"
+                                        cy="50"
+                                        fill="transparent"
+                                        stroke="currentColor"
+                                        className="text-gray-300"
+                                        strokeWidth="8"
+                                    />
+                                    <circle
+                                        r="40"
+                                        cx="50"
+                                        cy="50"
+                                        fill="transparent"
+                                        stroke="currentColor"
+                                        className="text-purple-600"
+                                        strokeWidth="8"
+                                        strokeLinecap="round"
+                                        strokeDasharray={251.2}
+                                        strokeDashoffset={251.2 - (251.2 * report.score) / 100}
+                                    />
+                                </svg>
+                                <p className="absolute inset-0 flex flex-col items-center justify-center text-lg sm:text-2xl
+                                 font-semibold">
+                                    {report.score}%
+                                </p>
+                            </div>
+
+                            <p className="mt-2 text-sm text-center text-gray-700">Overall compliance based on latest assessment</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="relative z-10">
+                    <div className="h-full flex flex-col bg-white/50 backdrop-blur-2xl rounded-3xl shadow-[0_20px_40px_rgba(118,27,230,0.12)] border border-gray-200 p-4 sm:p-5">
+                        {/* Header */}
+                        <h2 className="font-semibold text-lg sm:text-2xl flex items-center gap-2">
+                            <TbInfoTriangleFilled className="size-4 sm:size-6 text-[rgb(var(--light-purple))] shrink-0" />
+                            <span className="bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">Risk Level</span>
+                        </h2>
+                        <div className="border-b border-purple-300 my-3"></div>
+
+                        {report.riskLevel === "Low" && (
+                            <>
+                                <h3 className="my-1 sm:my-2 text-xl sm:text-3xl md:text-4xl capitalize font-semibold leading-tight text-green-600">Low</h3>
+                                <p className="text-sm text-gray-700">
+                                    Your organization shows strong compliance with minimal immediate risk.
+                                    Continue maintaining existing controls.
+                                </p>
+                            </>
+                        )}
+                        {report.riskLevel === "Medium" && (
+                            <>
+                                <h3 className="my-1 sm:my-2 text-xl sm:text-3xl md:text-4xl capitalize font-semibold leading-tight text-orange-600">Medium</h3>
+                                <p className="text-sm text-gray-700">
+                                    Some compliance gaps were identified that may lead to security or
+                                    regulatory risks if not addressed.
+                                </p>
+                            </>
+                        )}
+
+                        {report.riskLevel === "High" && (
+                            <>
+                                <h3 className="my-1 sm:my-2 text-xl sm:text-3xl md:text-4xl capitalize font-semibold leading-tight text-red-600">High</h3>
+                                <p className="text-sm text-gray-700">
+                                    Critical gaps significantly increase the risk of breaches and regulatory
+                                    penalties. Immediate action is required.
+                                </p>
+
+                            </>
+                        )}
+                    </div>
+                </div>
+
+                <div className="relative z-10">
+                    <div className="h-full flex flex-col bg-white/50 backdrop-blur-2xl rounded-3xl shadow-[0_20px_40px_rgba(118,27,230,0.12)] border border-gray-200 p-4 sm:p-5">
+                        {/* Header */}
+                        <h2 className="font-semibold text-lg sm:text-2xl flex items-center gap-2">
+                            <FaInfoCircle className="size-4 sm:size-5 text-[rgb(var(--light-purple))] shrink-0" />
+                            <span className="bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">Open Gaps</span>
+                        </h2>
+                        <div className="border-b border-purple-300 my-3"></div>
+
+                        {/* Gap Value*/}
+                        <h3 className="my-1 sm:my-2 text-xl sm:text-3xl md:text-4xl font-semibold text-gray-800 leading-tight">
+                            {report.openGaps < 10 ? `0${report.openGaps}` : report.openGaps}
+                        </h3>
+
+                        {report.openGaps == 0 && (
+                            <p className="text-sm text-gray-700">
+                                No open compliance gaps detected. Your controls meet the required standards.
+                            </p>
+                        )}
+
+                        {report.openGaps > 0 && report.openGaps <= 3 && (
+                            <p className="text-sm text-gray-700">
+                                A small number of compliance gaps were identified. Addressing these will
+                                further strengthen your security posture.
+                            </p>
+                        )}
+
+                        {report.openGaps > 3 && (
+                            <p className="text-sm text-gray-700">
+                                Multiple compliance gaps require attention. These gaps increase regulatory
+                                and security risk if left unresolved.
+                            </p>
+                        )}
+
+                    </div>
+                </div>
+
+                <div className="relative z-10">
+                    <div className="h-full flex flex-col bg-white/50 backdrop-blur-2xl rounded-3xl shadow-[0_20px_40px_rgba(118,27,230,0.12)] border border-gray-200 p-4 sm:p-5">
+                        {/* Header */}
+                        <h2 className="font-semibold text-lg sm:text-[22px] flex items-center gap-2">
+                            <IoShieldCheckmarkSharp className="size-4 sm:size-5 text-[rgb(var(--light-purple))] shrink-0" />
+                            <span className="bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">Regulations Covered</span>
+                        </h2>
+                        <div className="border-b border-purple-300 my-3"></div>
+
+                        {/* Regulation Value*/}
+                        <h3 className="my-1 sm:my-2 text-xl sm:text-3xl md:text-4xl text-gray-800 font-semibold leading-tight">03</h3>
+                        <p className="text-sm text-gray-700">Frameworks evaluated in this assessment PDPL, ISO 27001, and NESA controls.</p>
+
+                    </div>
+                </div>
+            </div>
+
+            {/* Summary */}
+            <div className="relative overflow-hidden rounded-2xl shadow-lg bg-linear-to-br from-purple-100 via-white to-white px-6 pt-8 pb-6">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-purple-100 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+
+                {/* Summary Header */}
+                <div className='flex flex-col-reverse lg:flex-row gap-4 justify-between'>
+                    <div className="flex items-center gap-3">
+                        <div className="relative flex size-12 items-center justify-center rounded-full bg-purple-100 border border-purple-200">
+                            <FaRegFileLines className="relative text-2xl text-purple-700" />
+                        </div>
+                        <div>
+                            <h2 className="font-semibold text-xl sm:text-2xl flex items-center gap-2">
+                                <span className="bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">Executive Summary</span>
+                            </h2>
+                            <p className="text-sm sm:text-base font-medium text-gray-700"> High-level overview of your organization’s current compliance posture.</p>
+                        </div>
+                    </div>
+
+                    <div className="relative flex flex-col items-end gap-4 justify-start">
+                        <Link href="/assessment"
+                            className="rounded-4xl bg-linear-to-r from-[#441851] to-[#761be6] 
+                         px-3 md:px-4 py-2 flex items-center gap-2 hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
+                            <span className="text-sm sm:text-base md:font-medium text-white">Re-run Assessment</span>
+                        </Link>
+                    </div>
+                </div>
+                <div className="border-b border-purple-300 my-3"></div>
+
+                <div className="p-4">
+                    {report?.summary && report.summary !== "Report generation failed. Please try again." ? (
+                        <p className="text-sm sm:text-base font-medium text-gray-700 rounded-xl border border-dashed bg-blue-50 p-4 hover:shadow-md hover:shadow-blue-100 transition border-blue-200">
+                            {report.summary}
+                        </p>
+                    ) : (
+                        <p className="text-sm sm:text-base font-medium text-gray-700 rounded-xl border border-dashed bg-blue-50 p-4 hover:shadow-md hover:shadow-blue-100 transition border-blue-200">
+                            <span className="font-semibold text-red-600">Report Summary Unavailable.</span>
+                            <br />
+                            We couldn’t generate the report due to temporary system limits.
+                            You can retry by running the assessment again.
+                        </p>
+                    )}
+                </div>
+
+            </div>
+
+            {/* Key Findings */}
+            {report.keyFindings && Object.keys(report.keyFindings).length > 0 && (
+                <div className="relative overflow-hidden hover:shadow-[0_20px_40px_rgba(118,27,230,0.12)] transition rounded-2xl bg-linear-to-tr from-purple-100 via-white to-white px-3 sm:px-6 py-8">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-purple-100 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+
+                    {/* Header */}
+                    <div className="relative border-b border-purple-300 pb-4 sm:pb-6">
+                        <div className="flex items-center gap-3">
+                            <div className="shrink-0 relative flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 text-purple-500">
+                                <span className="absolute inline-flex h-full w-full rounded-full bg-purple-300 opacity-20 animate-ping"></span>
+                                <FaClipboardList className="relative text-xl text-purple-700 shrink-0" />
+                            </div>
+                            <div>
+                                <h2 className="font-semibold text-xl sm:text-2xl flex items-center gap-2 bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">
+                                    Key Findings
+                                </h2>
+                                <p className="font-medium mt-1">
+                                    Critical compliance gaps identified during the assessment.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="space-y-6">
+                        {/* Content */}
+                        <div className="px-2 sm:px-4 lg:px-6 pt-6 space-y-4 sm:space-y-6">
+                            {Object.values(report.keyFindings).map((domain, id) => (
+                                <div key={id} className="p-4 rounded-xl border border-purple-300 bg-white hover:bg-slate-50 transition group">
+                                    <div className="flex flex-col-reverse md:flex-row md:items-center justify-between gap-3 lg:gap-4 mb-6">
+                                        <h3 className="font-semibold text-xl flex items-center gap-3">
+                                            <div className="shrink-0 relative flex size-9 items-center justify-center rounded-xl bg-purple-100">
+                                                {domain.domainName === "Incident" && (
+                                                    <TbInfoTriangleFilled className="size-5 text-purple-700" />
+                                                )}
+                                                {domain.domainName === "Access Control" && (
+                                                    <RiLockPasswordFill className="size-5 text-purple-700" />
+                                                )}
+                                                {domain.domainName === "Data" && (
+                                                    <FaRegFileLines className="size-5 text-purple-700" />
+                                                )}
+                                                {domain.domainName === "Network" && (
+                                                    <TbNetwork className="size-5 text-purple-700" />
+                                                )}
+                                                {domain.domainName === "Policy" && (
+                                                    <FaClipboardList className="size-5 text-purple-700" />
+                                                )}
+                                                {domain.domainName === "Vendor" && (
+                                                    <HiUsers className="size-5 text-purple-700" />
+                                                )}
+                                            </div>
+                                            <span className="flex flex-col bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">
+                                                {domain.domainName} Management
+                                                <span className="text-sm font-medium text-gray-600"> {domain.totalGaps} compliance gaps identified in this domain</span>
+                                            </span>
+                                        </h3>
+
+                                        {domain.severity === "LOW" && (
+                                            <span className="w-fit text-xs md:text-sm font-medium text-white bg-green-600 shadow-sm rounded-full px-2 md:px-3 py-1 uppercase">
+                                                {domain.severity}
+                                            </span>
+                                        )}
+                                        {domain.severity === "MEDIUM" && (
+                                            <span className="w-fit text-xs md:text-sm font-medium text-white bg-blue-600 shadow-sm rounded-full px-2 md:px-3 py-1 uppercase">
+                                                {domain.severity}
+                                            </span>
+                                        )}
+                                        {domain.severity === "HIGH" && (
+                                            <span className="w-fit text-xs md:text-sm font-medium text-white bg-orange-600 shadow-sm rounded-full px-2 md:px-3 py-1 uppercase">
+                                                {domain.severity}
+                                            </span>
+                                        )}
+                                        {domain.severity === "CRITICAL" && (
+                                            <span className="w-fit text-xs md:text-sm font-medium text-white bg-red-500 shadow-sm rounded-full px-2 md:px-3 py-1 uppercase">
+                                                {domain.severity}
+                                            </span>
+                                        )}
+
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        {Object.values(domain.gaps).map((gap, index) => (
+                                            <div key={index} className="flex flex-col md:flex-row items-start gap-3 lg:gap-4 px-4 py-3 rounded-xl border border-purple-300 border-dashed bg-purple-50">
+                                                <h6 className="shrink-0 mt-1 w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-medium">
+                                                    0{index + 1}
+                                                </h6>
+
+                                                <div className="flex-1">
+                                                    <h4 className="text-sm md:text-base font-semibold text-gray-800">
+                                                        {gap.title}
+                                                    </h4>
+                                                    <p className="text-sm font-medium text-gray-700 mt-1">
+                                                        {gap.description}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                </div>
+            )}
+
+
+            {/* Recommended Actions */}
+            {report.recommendations && Object.keys(report.recommendations).length > 0 && (
+                <div className="overflow-hidden rounded-2xl bg-white/60 backdrop-blur-2xl shadow-[0_20px_40px_rgba(118,27,230,0.12)] px-3 sm:px-6 py-8">
+                    {/* Header */}
+                    <div className="border-b border-purple-300 pb-4 sm:pb-6">
+                        <div className="flex items-center gap-3">
+                            <div className="shrink-0 relative flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 text-purple-500">
+                                <span className="absolute inline-flex h-full w-full rounded-full bg-purple-300 opacity-20 animate-ping"></span>
+                                <FaTools className="relative text-xl text-purple-700" />
+                            </div>
+                            <div>
+                                <h2 className="font-semibold text-xl sm:text-2xl flex items-center gap-2 bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">
+                                    Recommendations & Action Plan
+                                </h2>
+                                <p className="font-medium mt-1">
+                                    Prioritized actions to address identified compliance gaps
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Action steps */}
+                    <div className="px-2 sm:px-4 lg:px-6 pt-6 space-y-4 sm:space-y-6">
+                        {Object.values(report.recommendations).map((domain, id) => (
+                            <div key={id} className="py-4 px-6 bg-white/60 backdrop-blur-xl border border-gray-200 rounded-3xl shadow-[0_20px_40px_rgba(118,27,230,0.12)]">
+                                <div className="flex flex-col-reverse md:flex-row md:items-center justify-between gap-4">
+                                    <div>
+                                        <h3 className="text-xl font-semibold flex items-center gap-3 bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">
+                                            <span className="shrink-0 size-7 text-base flex items-center justify-center rounded-full bg-purple-600 text-white">
+                                                0{id + 1}
+                                            </span>
+                                            Strengthen {domain.domainName} Management
+                                        </h3>
+                                        <p className="mt-1 text-sm text-gray-600">
+                                            {domain.priority} priority · {domain.domainName} Management
+                                        </p>
+                                    </div>
+
+                                    {/* Status Badge */}
+                                    <span className="w-fit shrink-0 rounded-full bg-orange-100 text-orange-700 text-xs font-medium px-3 py-1">
+                                        Action Required
+                                    </span>
+                                </div>
+
+                                {/* Divider */}
+                                <div className="my-4 border-t border-gray-200" />
+
+                                <div className="space-y-3">
+                                    {Object.values(domain.recommendation).map((rec, index) => (
+                                        <div key={index}>
+                                            <span className="text-sm md:text-base font-semibold text-gray-800">
+                                                {rec.title}
+                                            </span>
+                                            <p className="text-sm font-medium text-gray-700">
+                                                {rec.description}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="mt-10 flex flex-wrap gap-3 sm:gap-2 items-center justify-between">
+                        <p className="text-xs text-gray-500">
+                            Mapped to: PDPL · NESA · ISO 27001
+                        </p>
+
+                        <Link href="/dashboard" className="rounded-full bg-linear-to-r from-[#441851] to-[#761be6] px-3 md:px-4 py-2 text-xs md:text-sm md:font-medium text-white hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
+                            View Action Details
+                        </Link>
+                    </div>
+                </div>
+            )}
+
         </section>
 
-        {/* Subtle loader */}
-        <div className="mt-10 flex items-center justify-center gap-2 text-sm text-gray-500">
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-black" />
-          Generating your compliance report...
-        </div>
-      </main>
-    );
-  }
-
-  if (!report) {
-    return (
-      <main className="max-w-4xl mx-auto px-6 py-10">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-semibold">Reports</h1>
-          <Link href="/assessment" className="underline text-sm">
-            Start Assessment
-          </Link>
-        </div>
-
-        <div className="mt-6 border bg-white rounded-xl p-6">
-          <p className="text-gray-700">
-            No report found yet. Complete a compliance assessment to generate
-            your first report.
-          </p>
-        </div>
-      </main>
-    );
-  }
-
-  return (
-    <main className="max-w-6xl mx-auto px-6 py-10">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between md:items-center gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">Compliance Report</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Generated on {new Date(report.createdAt).toLocaleString()}
-          </p>
-        </div>
-
-        <div className="flex gap-3">
-          <Link href="/reports/history" className="border px-3 py-2 rounded">
-            View History
-          </Link>
-
-          <Link
-            href="/assessment"
-            className="bg-black text-white px-3 py-2 rounded"
-          >
-            Run New Assessment
-          </Link>
-          <button
-            onClick={async () => {
-              const res = await fetch("/api/report/pdf");
-              if (!res.ok) {
-                toast.error("Failed to generate PDF");
-                return;
-              }
-
-              const blob = await res.blob();
-              const url = window.URL.createObjectURL(blob);
-
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = "Qubey_Compliance_Report.pdf";
-              document.body.appendChild(a);
-              a.click();
-              a.remove();
-
-              window.URL.revokeObjectURL(url);
-            }}
-            className="border px-3 py-2 rounded"
-          >
-            Download PDF
-          </button>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid md:grid-cols-3 gap-5 mt-8">
-        <StatCard title="Compliance Score" value={`${report.score}%`} />
-        <StatCard title="Risk Level" value={report.riskLevel} />
-        <StatCard title="Open Gaps" value={`${report.openGaps}`} />
-      </div>
-
-      {/* Sections */}
-      <ReportSection title="Summary" content={report.summary} />
-      <ReportSection title="Key Findings" content={report.keyFindings} />
-      <ReportSection title="Recommendations" content={report.recommendations} />
-    </main>
-  );
-}
-
-function StatCard({ title, value }) {
-  return (
-    <div className="border rounded-xl bg-white p-6">
-      <p className="text-sm text-gray-500">{title}</p>
-      <p className="text-3xl font-semibold mt-2">{value}</p>
-    </div>
-  );
-}
-
-function ReportSection({ title, content }) {
-  return (
-    <section className="mt-10">
-      <h2 className="text-lg font-semibold">{title}</h2>
-      <div className="mt-3 border rounded-xl bg-white p-6 whitespace-pre-line text-gray-700 leading-relaxed">
-        {content || "—"}
-      </div>
-    </section>
-  );
+    )
 }

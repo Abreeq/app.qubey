@@ -128,7 +128,7 @@ export default function AssessmentPage() {
     try {
       const res = await fetch(`/api/assessment/${id}`);
       const data = await res.json();
-      console.log(data);
+
       if (!res.ok) {
         toast.error(data.error || "Failed to load assessment");
         router.push("/dashboard");
