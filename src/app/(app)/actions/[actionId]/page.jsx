@@ -392,7 +392,7 @@ export default function ActionPage() {
                     {/* Remediation steps */}
                     <div className='rounded-xl border border-dashed bg-purple-50 p-4 hover:shadow-md hover:shadow-purple-100 transition border-purple-200'>
                         <div className='relative border-l-2 border-purple-300 pl-7 mx-2 space-y-3'>
-                            {Object.values(action.remediationSteps[0].remediationSteps).map((step, index) => (
+                            {action.remediationSteps[0].remediationSteps.map((step, index) => (
                                 <div key={index} className="relative group">
                                     <div className="absolute -left-11.5 top-1.5 size-8 bg-purple-200 rounded-full 
                                      flex items-center justify-center text-purple-700 text-sm font-bold transition-all duration-300 ease-in-out 
