@@ -18,5 +18,11 @@ export async function GET(req, ctx) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  return Response.json({ report });
+  return Response.json({
+    report: {
+      ...report,
+      keyFindings: JSON.parse(report.keyFindings || "{}"),
+      recommendations: JSON.parse(report.recommendations || "{}"),
+    },
+  });
 }

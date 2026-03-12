@@ -21,32 +21,18 @@ export default function ActionPage() {
 
     const [progress, setProgress] = useState(0);
 
-    const loadingMessages = [
-        "Analyzing compliance control...",
-        "Evaluating potential security risks...",
-        "Mapping regulatory impact...",
-        "Generating remediation guidance...",
-        "Building recommended action steps...",
-        "Preparing your compliance improvement plan..."
+    const steps = [
+        "Analyzing your assessment responses",
+        "Mapping responses to compliance frameworks",
+        "Identifying security and regulatory risks",
+        "Generating remediation guidance",
+        "Preparing your final compliance recommendations"
     ];
 
-    const [messageIndex, setMessageIndex] = useState(0);
-
-    useEffect(() => {
-        if (!loading) return;
-
-        if (progress < 15) setMessageIndex(0);
-        else if (progress < 30) setMessageIndex(1);
-        else if (progress < 50) setMessageIndex(2);
-        else if (progress < 70) setMessageIndex(3);
-        else if (progress < 85) setMessageIndex(4);
-        else setMessageIndex(5);
-
-    }, [progress, loading]);
+    const activeStep = Math.min(Math.floor(progress / 20), steps.length - 1);
 
     useEffect(() => {
         if (!loading) {
-            setMessageIndex(5);
             setProgress(100);
             return;
         }
@@ -55,26 +41,27 @@ export default function ActionPage() {
 
         const interval = setInterval(() => {
             setProgress((prev) => {
-                if (prev >= 90) return prev;
-            
+                if (prev >= 94) return prev;
+
                 let increment;
 
                 if (prev < 30) {
-                  increment = Math.random() * 8 + 2; // fast start
-                } 
-                else if (prev < 60) {
-                  increment = Math.random() * 4 + 1; // medium
-                } 
-                else {
-                  increment = Math.random() * 2; // slow end
+                    increment = Math.random() * 8 + 2; // fast start
                 }
-          
-                return Math.min(prev + increment, 90);
-              });
-            }, 600); // faster updates
+                else if (prev < 60) {
+                    increment = Math.random() * 4 + 1; // medium
+                }
+                else {
+                    increment = Math.random() * 2; // slow end
+                }
+
+                return Math.min(prev + increment, 94);
+            });
+        }, 600); // faster updates
 
         return () => clearInterval(interval);
     }, [loading]);
+
 
     useEffect(() => {
         if (!actionId) return;
@@ -92,7 +79,7 @@ export default function ActionPage() {
                 console.error(err);
                 router.push("/dashboard");
             } finally {
-                  setLoading(false);
+                setLoading(false);
             }
         };
 
@@ -200,16 +187,16 @@ export default function ActionPage() {
 
                 {/* Overlay generating message */}
                 <div className="absolute inset-0 z-20 flex items-center justify-center px-6">
-                    <div className="bg-white border border-gray-100 flex flex-col items-center rounded-3xl shadow-xl p-8 text-center space-y-4 max-w-md w-full">
+                    <div className="bg-white border border-gray-100 flex flex-col items-center rounded-3xl shadow-xl p-8 text-center max-w-lg w-full">
 
                         {/* Heading */}
-                        <div className="w-full flex justify-between items-center mb-3">
+                        <div className="w-full flex justify-between items-center mb-2">
                             <h2 className="text-2xl font-semibold bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">
-                                Preparing Action Guidance...
+                                Preparing Compliance Guidance...
                             </h2>
                             <span className="text-sm font-medium text-gray-600 tabular-nums">{Math.floor(progress)}%</span>
                         </div>
-                        <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                             <div
                                 className="h-full bg-linear-to-r from-[#761be6] to-[#441851] transition-all duration-500"
                                 style={{ width: `${progress}%` }}
@@ -217,13 +204,35 @@ export default function ActionPage() {
                         </div>
 
                         {/* Description */}
-                        <p className="text-gray-600 font-medium">
-                            Retrieving risk context, summary, and next steps. This usually takes 5–10 seconds.
+                        <p className="text-gray-600 font-medium my-4 inline-block">
+                            Retrieving risk context, summary, and next steps.
                         </p>
 
-                        <p className="text-gray-600 font-medium min-h-12 transition-opacity duration-300">
-                            {loadingMessages[messageIndex]}
-                        </p>
+                        <div className="space-y-3 w-full mb-6">
+                            {steps.map((step, index) => (
+                                <div key={index} className="flex items-center gap-2">
+                                    {/* Step Icon */}
+                                    {index < activeStep ? (
+                                        <div className="flex items-center justify-center size-6 rounded-full text-purple-600 font-bold">
+                                            ✓
+                                        </div>
+                                    ) : index === activeStep ? (
+                                        <div className="size-6 rounded-full border-2 border-purple-600 border-t-transparent animate-spin" />
+                                    ) : (
+                                        <div className="size-6 rounded-full border border-gray-300" />
+                                    )}
+
+                                    {/* Step text */}
+                                    <p className={`text-sm ${index < activeStep ? "text-gray-800 font-medium"
+                                        : index === activeStep ? "text-purple-700 font-medium" : "text-gray-400"
+                                        }`}
+                                    >
+                                        {step}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+
 
                         {/* Subtle bouncing dots */}
                         <div className="flex justify-center gap-1">
