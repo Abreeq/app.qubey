@@ -611,7 +611,7 @@ export default function ReportsHistoryPage() {
                     </p>
                   )}
 
-                  <Link href={`/reports/${report.assessmentId}`}
+                  <Link href={`/reports/history/${report.assessmentId}`}
                     className="text-sm px-3 py-2 border-none rounded-lg text-white bg-linear-to-r from-[#441851] to-[#761be6]
                     hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
                     View Report

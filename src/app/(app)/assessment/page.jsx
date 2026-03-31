@@ -693,7 +693,7 @@ export default function AssessmentPage() {
                     <>
                       <p className="md:font-medium text-white flex items-center gap-2">
                         Submitting...
-                        <span className="shrink-0 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                      <span className="shrink-0 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
                       </p>
                     </>
                   ) : (
