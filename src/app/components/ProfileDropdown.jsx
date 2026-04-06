@@ -57,7 +57,7 @@ export default function ProfileDropdown({ user }) {
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute top-7 lg:right-0 mt-3 w-64 bg-white/90 border border-purple-200 shadow-xl rounded-xl z-50 overflow-hidden">
+        <div className="absolute top-8 lg:right-0 mt-3 w-64 bg-white/90 border border-purple-200 shadow-xl rounded-xl z-50 overflow-hidden">
           <div className="flex items-center gap-3 p-3 bg-linear-to-r from-[#761be6]/65 to-[#761be6]">
             {user.image ? (
               <Image
