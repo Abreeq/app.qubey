@@ -18,6 +18,12 @@ export default function Navbar() {
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
 
+  const [actions, setActions] = useState([]); // for all actions
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [showResults, setShowResults] = useState(false);
+  const [loading, setLoading] = useState(true);
+
   // For Animation
   const logoRef = useRef(null);
   const searchRef = useRef(null);
@@ -29,6 +35,39 @@ export default function Navbar() {
   const upgradeRef = useRef(null);
   const notificationRef = useRef(null);
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+
+        const res = await fetch("/api/dashboard");
+        const data = await res.json();
+
+        setActions(data.nextAction || []);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, []);
+
+  useEffect(() => {
+    if (!query.trim()) {
+      setResults([]);
+      return;
+    }
+
+    const filtered = actions.filter((action) =>
+      action.title.toLowerCase().includes(query.toLowerCase())
+    );
+
+    setResults(filtered);
+  }, [query, actions]);
+
+
   // When click on outside dropdown should collapse
   useEffect(() => {
     function handleClickOutside(e) {
@@ -38,6 +77,10 @@ export default function Navbar() {
 
       if (notificationRef.current && !notificationRef.current.contains(e.target)) {
         setNotificationOpen(false);
+      }
+
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setShowResults(false);
       }
     }
 
@@ -101,9 +144,47 @@ export default function Navbar() {
               {/* SearchBar */}
               <div ref={searchRef} className="relative group">
                 <LuSearch className="text-[#441851]/40 absolute left-3 top-[50%] translate-y-[-50%] group-focus-within:text-gray-800" />
-                <input type="text" placeholder="Search reports & actions"
+                <input type="text" value={query} placeholder="Search recommended actions"
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setShowResults(true);
+                  }}
+                  onFocus={() => setShowResults(true)}
                   className={`pl-10 pr-3 py-1.5 w-72 xl:w-98 text-sm sm:text-base rounded-lg border border-gray-400 placeholder-[#441851]/40 group-focus-within:border-[#761be6] focus:ring-1 focus:ring-[#761be6]/10 outline-none transition-all`}
                 />
+
+                {showResults && query && (
+                  <div className="absolute top-full mt-2 w-lg p-2 bg-white border border-purple-200 rounded-lg shadow-xl z-50 max-h-80 overflow-y-auto animate-in fade-in zoom-in-95">
+                    {loading ? (
+                      <div className="px-4 py-3 text-sm text-gray-500">
+                        Loading...
+                      </div>
+                      ) : results.length > 0 ? (
+                      <>
+                        {results.map((item) => (
+                          <div key={item.id} onClick={() => {
+                              setShowResults(false);
+                              setQuery("");
+                              window.location.href = `/actions/${item.id}`;
+                            }}
+                            className="px-2 py-2 rounded-md hover:bg-purple-50 cursor-pointer"
+                          >
+                            <p className="text-sm font-medium text-gray-800 line-clamp-1">
+                              {item.title}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              +{item.expectedIncrease} score
+                            </p>
+                          </div>
+                        ))}
+                      </>
+                    ) : (
+                      <div className="px-4 py-3 text-sm text-gray-500">
+                        No results found
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Notification */}
@@ -172,14 +253,11 @@ export default function Navbar() {
 
                     <div className="border-b border-purple-300 my-2"></div>
                     {/* Footer */}
-                      {/* <button className="text-sm text-purple-600 hover:underline">
-                        View all notifications
-                      </button> */}
-                      <button className="cursor-pointer w-full rounded-lg bg-linear-to-r from-[#441851] to-[#761be6] 
+                    <button className="cursor-pointer w-full rounded-lg bg-linear-to-r from-[#441851] to-[#761be6] 
                           px-2 md:px-4 py-2 hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
-                        <span className="md:font-medium text-white">View all notifications</span>
-                      </button>
-                    
+                      <span className="md:font-medium text-white">View all notifications</span>
+                    </button>
+
                   </div>
                 )}
               </div>
@@ -318,10 +396,9 @@ export default function Navbar() {
                 {status === "loading" ? null : session?.user ? (
                   <ProfileDropdown user={session.user} />
                 ) : (
-                  <button
-                    onClick={() => signIn()}
-                    className="cursor-pointer rounded-lg bg-linear-to-r from-[#441851] to-[#761be6] px-4 py-2 font-semibold text-white hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition"
-                  >
+                  <button onClick={() => signIn()}
+                    className="cursor-pointer rounded-lg bg-linear-to-r from-[#441851] to-[#761be6] px-4 py-2 
+                    font-medium text-white text-nowrap hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
                     Sign in
                   </button>
                 )}
