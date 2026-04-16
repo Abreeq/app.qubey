@@ -95,7 +95,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
                     onClick={handleNavClick}
                 />
                 <SidebarLink
-                    href="/dashboard"
+                    href="/helpcenter"
                     icon={<IoHelpCircle />}
                     label="Help Center"
                     collapsed={collapsed}
