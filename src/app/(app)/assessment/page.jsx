@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { FaCalendarDays, FaCheck, FaMinus, FaArrowLeft } from "react-icons/fa6";
 import { IoMdClose } from "react-icons/io";
 import { BsBarChartFill } from "react-icons/bs";
 import { LuCircleCheckBig } from "react-icons/lu";
+import useRequireAuth from "@/app/hooks/useRequireAuth";
+import { useRouter } from "next/navigation";
 
 
 export default function AssessmentPage() {
+  const status = useRequireAuth();
   const router = useRouter();
 
   const [assessmentId, setAssessmentId] = useState(null);
@@ -74,8 +76,9 @@ export default function AssessmentPage() {
 
   // Start on load (Resume)
   useEffect(() => {
+    if (status !== "authenticated") return;
     startAssessment({ forceNew: false });
-  }, []);
+  }, [status]);
 
   // ✅ Start / Resume Assessment
   const startAssessment = async ({ forceNew = false } = {}) => {
@@ -303,6 +306,9 @@ export default function AssessmentPage() {
     }));
   }, [assessment]);
 
+  if (status === "loading" || status === "unauthenticated") {
+    return null;
+  }
 
   // for loading state
   if (loading) {

@@ -9,10 +9,13 @@ import { HiUsers } from "react-icons/hi2";
 import { RiLockPasswordFill } from "react-icons/ri";
 
 import { useEffect, useState } from "react";
+import useRequireAuth from "@/app/hooks/useRequireAuth";
 import Link from "next/link";
 
 
 export default function ReportsPage() {
+    const status = useRequireAuth();
+
     const [loading, setLoading] = useState(true);
     const [report, setReport] = useState(null);
     const [pdfLoading, setPdfLoading] = useState(false);
@@ -54,6 +57,8 @@ export default function ReportsPage() {
 
     // for actual data
     useEffect(() => {
+        if (status !== "authenticated") return;
+
         const load = async () => {
             try {
                 const res = await fetch("/api/report/latest");
@@ -69,11 +74,12 @@ export default function ReportsPage() {
                 setLoading(false);
             } catch (error) {
                 setReport(null);
+                setLoading(false);
             }
         };
 
         load();
-    }, []);
+    }, [status]);
 
 
     // for pdf download
@@ -106,6 +112,8 @@ export default function ReportsPage() {
         }
     }
 
+    if (status !== "authenticated") return null;
+    
     // loading state
     if (loading) {
         return (
