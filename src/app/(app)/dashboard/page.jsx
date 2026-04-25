@@ -13,7 +13,7 @@ import { useSession } from "next-auth/react";
 
 
 export default function DashboardPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
@@ -21,25 +21,33 @@ export default function DashboardPage() {
   const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
+    
+    if (status === "loading") return; // still checking session
+
+    if (!session) {
+      router.replace("/auth");
+      return;
+    }
+
     const load = async () => {
       try {
         const res = await fetch("/api/dashboard");
         const json = await res.json();
         if (res.status === 401) {
-          router.push("/auth");
+          router.replace("/auth");
           return;
         }
         if (res.status === 403) {
-          router.push("/profile");
+          router.replace("/profile");
           return;
         }
 
         if (res.status === 404) {
           if (json.error === "Organization not found") {
-            router.push("/organisation/create");
+            router.replace("/organisation/create");
             return
           }
-          router.push("/auth");
+          router.replace("/auth");
           return;
         }
 
@@ -47,12 +55,16 @@ export default function DashboardPage() {
         setLoading(false);
       } catch (error) {
         console.error(error);
-        router.push("/auth");
+        router.replace("/auth");
       }
     };
 
     load();
-  }, [router]);
+  }, [session, status, router]);
+
+  if (status === "loading" || !session) {
+    return null;
+  }
 
   if (loading) {
     return (

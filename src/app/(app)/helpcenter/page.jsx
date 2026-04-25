@@ -17,11 +17,18 @@ import { IoIosArrowUp } from "react-icons/io";
 import { IoMail } from "react-icons/io5";
 import { FaCalendarAlt } from "react-icons/fa";
 import { FaPhoneAlt } from "react-icons/fa";
-
+import useRequireAuth from "@/app/hooks/useRequireAuth";
 
 
 
 export default function HelpCenter() {
+  const status = useRequireAuth();
+
+
+  if (status === "loading" || status === "unauthenticated") {
+    return null;
+  }
+  
   // Quick Cards
   const quickStartCards = [
     {

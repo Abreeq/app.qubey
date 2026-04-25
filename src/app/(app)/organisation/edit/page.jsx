@@ -10,7 +10,11 @@ import { MdLock } from "react-icons/md";
 import { BsShieldFillExclamation } from "react-icons/bs";
 import { FaCalendarAlt, FaHistory} from "react-icons/fa";
 
+import useRequireAuth from '@/app/hooks/useRequireAuth';
+
 export default function OrganisationPage() {
+    const status = useRequireAuth();
+
     const [loading, setLoading] = useState(true);
     const [org, setOrg] = useState(null);
     const [saving, setSaving] = useState(false);
@@ -20,6 +24,8 @@ export default function OrganisationPage() {
     const formTopRef = useRef(null);
 
     useEffect(() => {
+        if (status !== "authenticated") return;
+
         const load = async () => {
             const res = await fetch("/api/organisation/me");
             const data = await res.json();
@@ -39,7 +45,7 @@ export default function OrganisationPage() {
         };
 
         load();
-    }, []);
+    }, [status]);
 
 
     //  For Validation
@@ -118,6 +124,10 @@ export default function OrganisationPage() {
 
         setOrg(data.org);
     };
+
+    if (status === "loading" || status === "unauthenticated") {
+        return null;
+    }
 
     if (loading) {
         return (
