@@ -18,9 +18,9 @@ export async function POST(req) {
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { password, confirmPassword } = body;
+  const { currentPassword, password, confirmPassword } = body;
 
-  if (!password || !confirmPassword) {
+  if (!currentPassword || !password || !confirmPassword) {
     return Response.json(
       { error: "All fields are required" },
       { status: 400 }
@@ -62,6 +62,10 @@ export async function POST(req) {
     }
     if (!user.emailVerified) {
       return Response.json({ error: "Email not verified" }, { status: 403 });
+    }
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isPasswordValid) {
+      return Response.json({ error: "Current password is incorrect" }, { status: 403 });
     }
 
     const googleAccount = user.accounts.find(account => account.provider === 'google' && account.type === 'oauth');
