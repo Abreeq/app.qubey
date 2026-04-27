@@ -17,6 +17,19 @@ export async function GET() {
       image: true,
       emailVerified: true,
     },
+    include: {
+      accounts: {
+        select: {
+          provider: true,
+          type: true,
+        },
+      },
+      organizations: {
+        select: {
+          name: true, // Get the organization names
+        },
+      },
+    },
   });
 
   return Response.json(user);
