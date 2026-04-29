@@ -45,7 +45,7 @@ export default function AuthPage() {
   const conditions = {
     name: [{ required: true, msg: "Please enter your full name" }, { length: 3, msg: "Name should be greater than 3 Characters" }],
     email: [{ required: true, msg: "Please enter your email" }, { pattern:/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/ , msg: "Please enter a valid email address" }],
-    password: [{ required: true, msg: "Please enter a password" }, { length: 6, msg: "Password must be at least 6 characters" }],
+    password: [{ required: true, msg: "Please enter your password" }, { length: 6, msg: "Password must be at least 6 characters" }],
   }
 
   const validate = (data, rules = conditions) => {
@@ -173,7 +173,7 @@ export default function AuthPage() {
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-5">
+        <form onSubmit={handleSubmit}>
           {/* FULL NAME (SIGNUP ONLY) */}
           {isSignup && (
             <div>
@@ -204,11 +204,11 @@ export default function AuthPage() {
               onFocus={() => setErrorMsg((prev) => ({ ...prev, email: "" }))}
               className={`w-full px-3 sm:px-4 py-1.5 sm:py-2 mt-1 text-sm sm:text-base rounded-4xl bg-white/80 border ${errorMsg.email? "border-red-500" : "border-white" } placeholder-[#441851]/40 focus:bg-white/60 focus:border-[#761be6] focus:ring-1 focus:ring-[#761be6]/10 outline-none transition-all`}
             />
-            {errorMsg.email && <p className="text-red-600 text-sm mt-1 -mb-3 ml-2">{errorMsg.email}</p>}
+            {errorMsg.email && <p className="text-red-600 text-sm mt-1 -mb-3 ml-2 capitalize">{errorMsg.email}</p>}
           </div>
 
           {/* Password */}
-          <div>
+          <div className="mt-3 sm:mt-5">
             <label className="text-sm sm:text-base font-medium ml-2 sm:ml-1">Password</label>
             <input
               type="password"
@@ -221,12 +221,18 @@ export default function AuthPage() {
               onFocus={() => setErrorMsg((prev) => ({ ...prev, password: "" }))}
               className={`w-full px-3 sm:px-4 py-1.5 sm:py-2 mt-1 text-sm sm:text-base rounded-4xl bg-white/80 border ${errorMsg.password? "border-red-500" : "border-white" } placeholder-[#441851]/40 focus:bg-white/60 focus:border-[#761be6] focus:ring-1 focus:ring-[#761be6]/10 outline-none transition-all`}
             />
-            {errorMsg.password && <p className="text-red-600 text-sm mt-1 mb-0 sm:-mb-3 ml-2">{errorMsg.password}</p>}
+            {errorMsg.password && 
+             <p className="text-red-600 text-sm mt-1 mb-0 sm:-mb-3 ml-2 capitalize">{errorMsg.password}</p>
+            }
           </div>
+
+          <button className="mt-3 w-full text-right cursor-pointer text-[#761be6] font-medium text-sm hover:underline">
+            Forgot Password?
+          </button>
 
           {/* Submit Button */}
           <button disabled={loading || googleLoading}
-            className="disabled:opacity-60 w-full py-2 sm:py-2.5 rounded-4xl cursor-pointer bg-linear-to-r from-[#441851] to-[#761be6] hover:from-[#5e1dbf] hover:to-[#8b2bf0] text-white font-semibold mt-2 transition-colors">
+            className="disabled:opacity-60 w-full mt-3 sm:mt-4 py-2 sm:py-2.5 rounded-4xl cursor-pointer bg-linear-to-r from-[#441851] to-[#761be6] hover:from-[#5e1dbf] hover:to-[#8b2bf0] text-white font-semibold transition-colors">
             {loading ? "Please wait..." : isSignup ? "Sign Up" : "Sign In"}
           </button>
 
@@ -266,10 +272,10 @@ export default function AuthPage() {
         </button>
 
         {/* Footer Login Link */}
-        <p className="text-center text-sm text-[#441851]/80 mt-3">
+        <p className="text-center text-sm text-[#441851]/80 mt-4">
           {isSignup ? "Already have an account?" : "Don’t have an account?"}
           <button type="button"
-            className="cursor-pointer font-bold text-[#761be6] ml-1 hover:underline"
+            className="cursor-pointer font-medium text-[#761be6] ml-1 hover:underline"
             onClick={() => {
               setIsSignup(!isSignup);
               setAuthError("");
