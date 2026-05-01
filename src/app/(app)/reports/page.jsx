@@ -9,12 +9,12 @@ import { HiUsers } from "react-icons/hi2";
 import { RiLockPasswordFill } from "react-icons/ri";
 
 import { useEffect, useState } from "react";
-import useRequireAuth from "@/app/hooks/useRequireAuth";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 
 
 export default function ReportsPage() {
-    const status = useRequireAuth();
+    const { status } = useSession();
 
     const [loading, setLoading] = useState(true);
     const [report, setReport] = useState(null);

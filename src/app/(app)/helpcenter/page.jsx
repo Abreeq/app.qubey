@@ -1,33 +1,20 @@
 "use client"
 
-import { MdEditDocument } from "react-icons/md";
-import { MdHeadsetMic } from "react-icons/md";
-import { MdRocketLaunch } from "react-icons/md";
+import { MdEditDocument, MdHeadsetMic, MdRocketLaunch } from "react-icons/md";
+import { FaShieldAlt, FaCalendarAlt, FaPhoneAlt } from "react-icons/fa";
+import { IoIosGlobe, IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
 import { FiClock } from "react-icons/fi";
-import { FaShieldAlt } from "react-icons/fa";
 import { CgNotes } from "react-icons/cg";
 import { FaArrowRight } from "react-icons/fa6";
 import { TbNetwork } from "react-icons/tb";
-import { IoIosGlobe } from "react-icons/io";
 import { RxCrossCircled } from "react-icons/rx";
-import { useState } from "react";
 import { LuMessageCircleMore } from "react-icons/lu";
-import { IoIosArrowDown } from "react-icons/io";
-import { IoIosArrowUp } from "react-icons/io";
 import { IoMail } from "react-icons/io5";
-import { FaCalendarAlt } from "react-icons/fa";
-import { FaPhoneAlt } from "react-icons/fa";
-import useRequireAuth from "@/app/hooks/useRequireAuth";
 
+import { useState } from "react";
 
 
 export default function HelpCenter() {
-  const status = useRequireAuth();
-
-
-  if (status === "loading" || status === "unauthenticated") {
-    return null;
-  }
   
   // Quick Cards
   const quickStartCards = [

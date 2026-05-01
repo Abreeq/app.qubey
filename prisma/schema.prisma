@@ -149,7 +149,7 @@ model ComplianceSnapshot {
   updatedAt        DateTime     @updatedAt
   highRiskCount    Int          @default(0)
   lastAssessmentAt DateTime?
-  scoreImprovement Float          @default(0)
+  scoreImprovement Float        @default(0)
   actionsPending   Int          @default(0)
   assessmentId     String
   assessment       Assessment   @relation(fields: [assessmentId], references: [id])
@@ -183,9 +183,9 @@ model ComplianceAction {
 }
 
 /// *
-///  * ======================
-///  * USER ROLES
-///  * ======================
+/// * ======================
+/// * USER ROLES
+/// * ======================
 enum Role {
   USER
   ADMIN
