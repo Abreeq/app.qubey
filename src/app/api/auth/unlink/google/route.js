@@ -35,9 +35,6 @@ export async function POST(req) {
     if (!user.emailVerified) {
       return Response.json({ error: "Email not verified" }, { status: 403 });
     }
-    if (user.organizations === null || user.organizations.length === 0) {
-      return Response.json({ error: "No organizations found" }, { status: 404 });
-    }
     
     const googleAccount = user.accounts.find(
       (acc) => acc.provider === "google" && acc.type === "oauth",

@@ -22,104 +22,93 @@ export const authOptions = {
 
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email and password are required");
+          throw new Error("Email and password required");
         }
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
         });
 
-        if (!user) {
-          throw new Error("Invalid credentials");
-        }
+        if (!user) throw new Error("Invalid credentials");
 
-        if (!user.password) {
-          throw new Error("This email is registered using Google login");
-        }
-
-        const isValid = await bcrypt.compare(
+        const valid = await bcrypt.compare(
           credentials.password,
           user.password
         );
 
-        if (!isValid) {
-          throw new Error("Invalid credentials");
-        }
+        if (!valid) throw new Error("Invalid credentials");
 
         return user;
       },
     }),
   ],
 
-  session: { strategy: "jwt" },
+  session: {
+    strategy: "jwt",
+  },
 
   pages: {
     signIn: "/auth",
   },
 
-  events: {
-    async createUser({ user }) {
-      // ✅ Auto-verify newly created OAuth users (Google)
-      if (!user.emailVerified) {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { emailVerified: new Date() },
-        });
-      }
-    },
-  },
-
   callbacks: {
     async jwt({ token, user, trigger }) {
-      // On initial login
+      // Initial login
       if (user) {
         token.id = user.id;
         token.role = user.role;
-        token.emailVerified = user.emailVerified;
 
-        // Fetch all organizations the user belongs to (assuming it's a relation in Prisma)
-        const dbUser = await prisma.user.findUnique({
-          where: { id: user.id },
-          select: {
-            organizations: {
-              select: {
-                name: true,  // Get the organization names
-              },
-            },
-          },
-        });
+        // default active org
+        if (!token.activeOrganizationId) {
+          const firstMembership = await prisma.membership.findFirst({
+            where: { userId: user.id },
+            select: { organizationId: true },
+          });
 
-        // If the user belongs to any organizations, attach the list of organization names to the token
-        if (dbUser?.organizations) {
-          token.organizations = dbUser.organizations.name; // Store organization names as an array
-        } else {
-          token.organizations = [];  // No organizations
+          token.activeOrganizationId = firstMembership?.organizationId || null;
         }
-      }
 
-      // Refresh token after update()
-      if (trigger === "update") {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.id },
+        // load organizations
+        const memberships = await prisma.membership.findMany({
+          where: { userId: user.id },
           select: {
-            emailVerified: true,
             role: true,
-            organizations: {
+            organization: {
               select: {
+                id: true,
                 name: true,
               },
             },
           },
         });
 
-        if (dbUser) {
-          token.emailVerified = dbUser.emailVerified;
-          token.role = dbUser.role;
-          if(dbUser?.organizations) {
-            token.organizations = dbUser.organizations.name;
-          }
-          token.organizations = [];  // No organizations
-        }
+        token.organizations = memberships.map((m) => ({
+          id: m.organization.id,
+          name: m.organization.name,
+          role: m.role,
+        }));
+      }
+
+      // handle switch update
+      if (trigger === "update" && token?.activeOrganizationId) {
+        const memberships = await prisma.membership.findMany({
+          where: { userId: token.id },
+          select: {
+            role: true,
+            organization: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        });
+
+        token.organizations = memberships.map((m) => ({
+          id: m.organization.id,
+          name: m.organization.name,
+          role: m.role,
+        }));
       }
 
       return token;
@@ -128,8 +117,9 @@ export const authOptions = {
     async session({ session, token }) {
       session.user.id = token.id;
       session.user.role = token.role;
-      session.user.emailVerified = token.emailVerified;
-      session.user.organizations = token.organizations; // Add organizations to the session
+      session.user.organizations = token.organizations || [];
+      session.user.activeOrganizationId = token.activeOrganizationId || null;
+
       return session;
     },
   },
