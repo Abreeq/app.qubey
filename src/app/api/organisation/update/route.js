@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { checkMembership } from "@/lib/checkMembership";
 
 export async function PATCH(req) {
   const session = await getServerSession(authOptions);
@@ -28,13 +29,13 @@ export async function PATCH(req) {
   }
 
   // fetch existing org
-  const org = await prisma.organization.findUnique({
-    where: { ownerId: session.user.id },
-  });
+  const membership = await checkMembership(session.user.id, "OWNER");
 
-  if (!org) {
+  if (!membership) {
     return Response.json({ error: "Organization not found" }, { status: 404 });
   }
+
+  const org = membership.organization;
 
   // detect org changes that affect assessment generation
   const affectsAssessment =

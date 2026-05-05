@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { GoogleGenAI } from "@google/genai";
 import { extractJSON } from "@/lib/extractJSON";
+import { checkMembership } from "@/lib/checkMembership";
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -14,13 +15,12 @@ export async function POST(req) {
   
   const { forceNew } = await req.json().catch(() => ({}));
   
-  const org = await prisma.organization.findUnique({
-    where: { ownerId: session.user.id },
-  });
+  const membership = await checkMembership(session.user.id);
 
-  if (!org) {
-    return Response.json({ error: "Organization not found" }, { status: 400 });
+  if (!membership) {
+    return Response.json({ error: "Organization not found" }, { status: 404 });
   }
+  const org = membership.organization;
 
   // ✅ If user has in-progress assessment, resume
   if (!forceNew) {
