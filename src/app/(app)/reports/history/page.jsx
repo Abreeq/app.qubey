@@ -7,11 +7,8 @@ import { FaInfoCircle, FaShieldAlt, FaArrowRight } from "react-icons/fa";
 import { FaArrowLeft } from "react-icons/fa6";
 import { HiDocumentChartBar } from "react-icons/hi2";
 import { MdOutlineFileDownload } from "react-icons/md";
-import useRequireAuth from "@/app/hooks/useRequireAuth";
 
 export default function ReportsHistoryPage() {
-  const status = useRequireAuth();
-
   const [loading, setLoading] = useState(true);
   const [reports, setReports] = useState([]);
   const [showAll, setShowAll] = useState(false);
@@ -57,8 +54,6 @@ export default function ReportsHistoryPage() {
   }, [loading]);
 
   useEffect(() => {
-    if (status !== "authenticated") return;
-
     const load = async () => {
       try {
         const res = await fetch("/api/report/list");
@@ -79,11 +74,7 @@ export default function ReportsHistoryPage() {
     };
 
     load();
-  }, [status]);
-
-  if (status === "loading" || status === "unauthenticated") {
-    return null;
-  }
+  }, []);
 
   // for Average Score
   const averageScore = () => {

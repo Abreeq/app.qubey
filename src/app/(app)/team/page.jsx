@@ -5,21 +5,13 @@ import { FaUserCheck } from "react-icons/fa";
 import { LuSearch } from "react-icons/lu";
 import { RxCrossCircled } from "react-icons/rx";
 
-
 import { useState } from "react";
-import useRequireAuth from "@/app/hooks/useRequireAuth";
 
 
 export default function TeamPage() {
-  const status = useRequireAuth();
-
   const [userModel, setUserModel] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
 
-
-  if (status === "loading" || status === "unauthenticated") {
-    return null;
-  }
   
   // loading state
   if (false) {

@@ -2,21 +2,18 @@
 
 import { FaCalendarDays, FaRegFileLines, FaArrowLeft } from "react-icons/fa6";
 import { MdOutlineFileDownload } from "react-icons/md";
-import { FaHistory, FaClipboardList, FaTools, FaInfoCircle, FaShieldAlt } from "react-icons/fa";
+import { FaClipboardList, FaTools, FaInfoCircle, FaShieldAlt } from "react-icons/fa";
 import { TbInfoTriangleFilled, TbNetwork } from "react-icons/tb";
 import { IoShieldCheckmarkSharp } from "react-icons/io5";
 import { HiUsers } from "react-icons/hi2";
 import { RiLockPasswordFill } from "react-icons/ri";
 
 import { useEffect, useState } from "react";
-import useRequireAuth from "@/app/hooks/useRequireAuth";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
 
 export default function ReportsPage() {
-    const status = useRequireAuth();
-
     const { assessmentId } = useParams();
     const [loading, setLoading] = useState(true);
     const [report, setReport] = useState(null);
@@ -59,8 +56,7 @@ export default function ReportsPage() {
 
     // for actual data
     useEffect(() => {
-        if (status !== "authenticated") return;
-
+        
         if (!assessmentId) return;
 
         const load = async () => {
@@ -85,7 +81,7 @@ export default function ReportsPage() {
         };
 
         load();
-    }, [status, assessmentId]);
+    }, [assessmentId]);
 
 
     // for pdf download
@@ -121,7 +117,6 @@ export default function ReportsPage() {
         }
     };
 
-    if (status !== "authenticated") return null;
     
     // loading state
     if (loading) {
