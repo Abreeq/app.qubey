@@ -11,18 +11,22 @@ datasource db {
 /// * USER MODEL
 /// * ======================
 model User {
-  id            String        @id @default(uuid())
+  id            String       @id @default(uuid())
   name          String?
-  email         String        @unique
+  email         String       @unique
   emailVerified DateTime?
   password      String?
   image         String?
-  role          Role          @default(USER)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  role          Role         @default(USER)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  activeOrganizationId String?
+  
   accounts      Account[]
-  organizations Organization?
+  memberships   Membership[]
   sessions      Session[]
+  assessments   Assessment[]
+  reports       Report[]
 }
 
 /// *
@@ -72,39 +76,59 @@ model VerificationToken {
 }
 
 model Organization {
-  id              String              @id @default(cuid())
-  name            String
-  ownerId         String              @unique
-  createdAt       DateTime            @default(now())
-  complianceScore Float               @default(0)
-  riskLevel       String              @default("Unknown")
-  openGaps        Int                 @default(0)
-  companySize     String
-  country         String              @default("UAE")
-  handlesPII      Boolean             @default(false)
-  handlesPayments Boolean             @default(false)
-  industry        String
-  profileVersion  Int                 @default(1)
-  updatedAt       DateTime?           @updatedAt
-  industryOther   String?
-  actions         ComplianceAction[]
-  snapshot        ComplianceSnapshot?
-  owner           User                @relation(fields: [ownerId], references: [id])
-  risks           Risk[]
+  id                  String               @id @default(cuid())
+  name                String
+  createdAt           DateTime             @default(now())
+  complianceScore     Float                @default(0)
+  riskLevel           String               @default("Unknown")
+  openGaps            Int                  @default(0)
+  companySize         String
+  country             String               @default("UAE")
+  handlesPII          Boolean              @default(false)
+  handlesPayments     Boolean              @default(false)
+  industry            String
+  profileVersion      Int                  @default(1)
+  updatedAt           DateTime?            @updatedAt
+  industryOther       String?
+  actions             ComplianceAction[]
+  memberships         Membership[]
+  risks               Risk[]
+  assessments         Assessment[]
+  reports             Report[]
+  complianceSnapshots ComplianceSnapshot[]
+}
+
+model Membership {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  role           OrgRole  @default(MEMBER)
+  createdAt      DateTime @default(now())
+  status         String   @default("ACTIVE") // ACTIVE | BLOCKED
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
 }
 
 model Assessment {
-  id                  String               @id @default(cuid())
-  userId              String
-  organizationId      String
-  status              String               @default("IN_PROGRESS")
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  profileVersion      Int                  @default(1)
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  status         String   @default("IN_PROGRESS")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  profileVersion Int      @default(1)
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
   complianceActions   ComplianceAction[]
   complianceSnapshots ComplianceSnapshot[]
   questions           Question[]
   risks               Risk[]
+  report              Report?
 }
 
 model Question {
@@ -114,7 +138,7 @@ model Question {
   category     String
   weight       Int        @default(1)
   answers      Answer[]
-  assessment   Assessment @relation(fields: [assessmentId], references: [id])
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
 }
 
 model Answer {
@@ -122,7 +146,7 @@ model Answer {
   questionId String
   value      String
   notes      String?
-  question   Question @relation(fields: [questionId], references: [id])
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 }
 
 model Report {
@@ -137,49 +161,58 @@ model Report {
   keyFindings     String
   recommendations String
   createdAt       DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assessment   Assessment   @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
 }
 
 model ComplianceSnapshot {
-  id               String       @id @default(cuid())
-  organizationId   String       @unique
+  id               String    @id @default(cuid())
+  organizationId   String    @unique
   readinessScore   Float
   riskLevel        String
-  actionsCompleted Int          @default(0)
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
-  highRiskCount    Int          @default(0)
+  actionsCompleted Int       @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  highRiskCount    Int       @default(0)
   lastAssessmentAt DateTime?
-  scoreImprovement Float          @default(0)
-  actionsPending   Int          @default(0)
+  scoreImprovement Float     @default(0)
+  actionsPending   Int       @default(0)
   assessmentId     String
-  assessment       Assessment   @relation(fields: [assessmentId], references: [id])
-  organization     Organization @relation(fields: [organizationId], references: [id])
+
+  assessment   Assessment   @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
 
 model Risk {
-  id             String       @id @default(cuid())
+  id             String   @id @default(cuid())
   organizationId String
   title          String
   severity       String
   status         String
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime @default(now())
   assessmentId   String
-  assessment     Assessment   @relation(fields: [assessmentId], references: [id])
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  updatedAt      DateTime @updatedAt
+
+  assessment   Assessment   @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
 
 model ComplianceAction {
-  id               String       @id @default(cuid())
+  id               String   @id @default(cuid())
   organizationId   String
   title            String
   description      String
   expectedIncrease Float
   status           String
-  createdAt        DateTime     @default(now())
+  createdAt        DateTime @default(now())
   remediationSteps String?
   assessmentId     String
-  assessment       Assessment   @relation(fields: [assessmentId], references: [id])
-  organization     Organization @relation(fields: [organizationId], references: [id])
+  updatedAt        DateTime @updatedAt
+
+  assessment   Assessment   @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
 
 /// *
@@ -189,4 +222,10 @@ model ComplianceAction {
 enum Role {
   USER
   ADMIN
+}
+
+enum OrgRole {
+  OWNER
+  MODERATOR
+  MEMBER
 }

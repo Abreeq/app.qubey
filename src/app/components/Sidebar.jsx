@@ -12,6 +12,7 @@ import { IoHelpCircle } from "react-icons/io5";
 
 import { usePathname } from "next/navigation";
 import { useSession } from 'next-auth/react';
+import OrgSwitcher from './OrgSwitcher';
 
 export default function Sidebar({ collapsed, setCollapsed }) {
 
@@ -25,9 +26,10 @@ export default function Sidebar({ collapsed, setCollapsed }) {
             {/* Sidebar Header (affected by collapse) */}
             <div className="h-14 flex items-center justify-between px-3 border-b border-purple-400">
                 {!collapsed && (
-                    <span className="font-bold text-sm uppercase bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent tracking-wide">
-                        {session?.user?.organizations || "Menu"}
-                    </span>
+                    // <span className="font-bold text-sm uppercase bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent tracking-wide">
+                    //     {session?.user?.organizations[0]?.name || "Menu"}
+                    // </span>
+                    <OrgSwitcher />
                 )}
                 <div className="relative group">
                     <button
