@@ -3,7 +3,6 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./globals.css";
 import { Providers } from "./provider";
-import Navbar from "./components/Navbar";
 
 const nataSans = Nata_Sans({
   subsets: ["latin"],
@@ -32,7 +31,7 @@ export default function RootLayout({ children }) {
         className={`${nataSans.variable} ${montserrat.variable} antialiased`}
       >
         <Providers>
-          <Navbar />
+          {/* Navbar was here */}
           {children}
           <ToastContainer position="top-right" autoClose={3000} />
         </Providers>
