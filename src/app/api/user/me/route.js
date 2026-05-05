@@ -8,27 +8,39 @@ export async function GET() {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-const user = await prisma.user.findUnique({
-  where: { id: session.user.id },
-  select: {
-    id: true,
-    name: true,
-    email: true,
-    image: true,
-    emailVerified: true,
-    accounts: {
-      select: {
-        provider: true,
-        type: true,
+   const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+      emailVerified: true,
+
+      accounts: {
+        select: {
+          provider: true,
+          type: true,
+        },
+      },
+
+      memberships: {
+        where: { role: "OWNER" },
+        select: {
+          organization: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
       },
     },
-    organizations: {
-      select: {
-        name: true,
-      },
-    },
-  },
-});
+  });
+
+  const orgs = user.memberships.map((m) => m.organization);
+  user.organizations = orgs[0] || null; // Assuming one org per user for now
+  delete user.memberships;
 
   return Response.json(user);
 }

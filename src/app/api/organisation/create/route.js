@@ -11,8 +11,15 @@ export async function POST(req) {
     }
 
     const body = await req.json();
-    const { name, industry, companySize, industryOther, country, handlesPII, handlesPayments } =
-      body;
+    const {
+      name,
+      industry,
+      companySize,
+      industryOther,
+      country,
+      handlesPII,
+      handlesPayments,
+    } = body;
 
     if (!name || !industry || !companySize) {
       return Response.json(
@@ -21,28 +28,44 @@ export async function POST(req) {
       );
     }
 
-    const existing = await prisma.organization.findUnique({
-      where: { ownerId: session.user.id },
+    // ✅ Check if user already OWNS an org
+    const existingOwner = await prisma.membership.findFirst({
+      where: {
+        userId: session.user.id,
+        role: "OWNER",
+      },
     });
 
-    if (existing) {
+    if (existingOwner) {
       return Response.json(
         { error: "Organization already exists" },
         { status: 400 }
       );
     }
 
-    const org = await prisma.organization.create({
-      data: {
-        name,
-        industry,
-        industryOther,
-        companySize,
-        country: country || "UAE",
-        handlesPII: !!handlesPII,
-        handlesPayments: !!handlesPayments,
-        ownerId: session.user.id,
-      },
+    // ✅ Create org + membership in transaction
+    const org = await prisma.$transaction(async (tx) => {
+      const newOrg = await tx.organization.create({
+        data: {
+          name,
+          industry,
+          industryOther,
+          companySize,
+          country: country || "UAE",
+          handlesPII: !!handlesPII,
+          handlesPayments: !!handlesPayments,
+        },
+      });
+
+      await tx.membership.create({
+        data: {
+          userId: session.user.id,
+          organizationId: newOrg.id,
+          role: "OWNER",
+        },
+      });
+
+      return newOrg;
     });
 
     return Response.json({ success: true, org }, { status: 201 });
