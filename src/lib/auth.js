@@ -91,6 +91,13 @@ export const authOptions = {
 
       // handle switch update
       if (trigger === "update") {
+        const user = await prisma.user.findUnique({
+          where: { id: token.id },
+        });
+
+        token.role = user.role;
+        token.activeOrganizationId = user.activeOrganizationId;
+
         const memberships = await prisma.membership.findMany({
           where: { userId: token.id },
           select: {

@@ -29,9 +29,7 @@ export default function OrgSwitcher() {
   });
 
   // 2️⃣ update session (UI instant sync)
-  await update({
-    activeOrganizationId: org.id,
-  });
+  await update();
 };
 
   if (!activeOrg) return null;

@@ -5,16 +5,199 @@ import { FaUserCheck } from "react-icons/fa";
 import { LuSearch } from "react-icons/lu";
 import { RxCrossCircled } from "react-icons/rx";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useSession } from "next-auth/react";
 
 
 export default function TeamPage() {
-  const [userModel, setUserModel] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0);
+  const { data: session } = useSession(); 
 
-  
+  const [teamStats, setTeamStats] = useState({});
+  const [members, setMembers] = useState([]);
+  const [userModel, setUserModel] = useState(false);
+  const [userEmail, setUserEmail] = useState("")
+  // For Filter & Search
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const [error, setError] = useState(null);
+  const [addError, setAddError] = useState("");
+  const [addSuccess, setAddSuccess] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [addLoading, setAddLoading] = useState(false);
+
+
+  // For Loader
+  useEffect(() => {
+    if (!loading) {
+      setLoadingProgress(100);
+      return;
+    }
+
+    setLoadingProgress(0); // reset when loading starts
+
+    const interval = setInterval(() => {
+      setLoadingProgress((prev) => {
+        if (prev >= 90) return prev;
+
+        let increment;
+
+        if (prev < 30) {
+          increment = Math.random() * 8 + 2; // fast start
+        }
+        else if (prev < 60) {
+          increment = Math.random() * 4 + 1; // medium
+        }
+        else {
+          increment = Math.random() * 2; // slow end
+        }
+
+        return Math.min(prev + increment, 90);
+      });
+    }, 300); // faster updates
+
+    return () => clearInterval(interval);
+  }, [loading]);
+
+  // To get the Data
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch("/api/team");
+        const data = await res.json();
+
+        if (!res.ok) {
+          setError(data.error || "Failed to load team data");
+          setLoading(false);
+          return;
+        }
+// console.log(data);
+        setTeamStats(data.stats);
+        setMembers(data.members);
+      } catch (err) {
+        setError("Something went wrong while loading team data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, []);
+
+
+  // For Filter
+  const filteredMembers = members.filter((user) => {
+    const matchesSearch =
+      (user.name?.toLowerCase() || "").includes(search.toLowerCase()) ||
+      (user.email?.toLowerCase() || "").includes(search.toLowerCase());
+
+    const matchesStatus =
+      statusFilter === "all" || user.status === statusFilter.toUpperCase();
+
+    return matchesSearch && matchesStatus;
+  });
+
+
+  // To get Initials
+  const getInitials = (name) => {
+    if (name) {
+      return name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+    }
+    return "U";// fallback: User;
+  };
+
+
+  const handleAddMember = async () => {
+    if (!userEmail) {
+      setAddError("Email Address is Required");
+      return;
+    }
+
+    try {
+      setAddLoading(true);
+      setAddError("");
+      setAddSuccess("");
+
+      const res = await fetch("/api/organisation/add-member", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ 
+          email: userEmail,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setAddError(data.error || "Failed to add member");
+        return;
+      }
+
+      setAddSuccess("Invitation sent successfully");
+      setTimeout(() => setAddSuccess(""), 3000);
+
+      //update UI instantly
+      // setMembers((prev) => [...prev, data.member]);
+
+      setUserEmail("");
+      setUserModel(false);
+
+    } catch (err) {
+      setAddError("Something went wrong. Please try again.");
+    } finally {
+      setAddLoading(false);
+    }
+  };
+
+  // For Error
+  if (error) {
+    return (
+      <main className="max-w-7xl mx-auto mt-12 relative overflow-hidden rounded-2xl bg-linear-to-tr from-purple-100 via-white to-white px-6 py-8">
+        <div className="absolute top-4 right-4 w-84 h-84 bg-purple-100 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+
+        <div className="relative pb-1 sm:pb-6">
+          <div className="text-center space-y-4">
+            <h2 className={`font-semibold capitalize text-2xl sm:text-3xl bg-linear-to-r from-red-400 to-red-600 bg-clip-text text-transparent`}>
+              Oops! Unable to Load Team Data
+            </h2>
+            <p className="text-base sm:text-lg text-gray-700 font-medium mt-1 max-w-3xl mx-auto">
+              We couldn’t fetch your team members right now.
+            </p>
+            <p className="text-sm font-medium text-red-600 bg-red-50 border border-red-200 inline-block px-3 py-2 rounded-lg">
+              {error}
+            </p>
+            <p className="text-sm sm:text-base font-medium mt-1">
+              Try refreshing the page or come back later.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <button onClick={() => window.location.reload()}
+                className="cursor-pointer rounded-lg bg-linear-to-r from-[#441851] to-[#761be6] text-white
+                  px-4 py-2 hover:from-[#5e1dbf] hover:to-[#8b2bf0] font-medium transition">
+                Retry
+              </button>
+
+              <Link href="/dashboard"
+                className="font-medium px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                Go Back to Dashboard
+              </Link>
+            </div>
+
+            <p className="text-sm sm:text-base font-medium mt-1">
+              If the issue persists, please contact support.
+            </p>
+
+          </div>
+        </div>
+      </main>
+    )
+  }
+
   // loading state
-  if (false) {
+  if (loading) {
     return (
       <section className="relative">
         {/* Skeleton background */}
@@ -136,12 +319,22 @@ export default function TeamPage() {
         </div>
 
         <div className="flex flex-col items-end gap-4">
-          <button onClick={() => setUserModel(true)}
+          <button onClick={() => {
+            setUserModel(true);
+            setAddSuccess("");
+          }}
             className="cursor-pointer rounded-4xl bg-linear-to-r from-[#441851] to-[#761be6] 
               px-3 md:px-4 py-2 flex items-center gap-2 hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
             <HiUserAdd className="size-3 sm:size-4 text-white shrink-0" />
             <span className="text-sm sm:text-base md:font-medium text-white">Add New User</span>
           </button>
+
+          {addSuccess && (
+            <p className="text-white bg-green-600 inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm ml-2 capitalize font-medium text-left">
+              {addSuccess}
+            </p>
+          )}
+
         </div>
       </div>
 
@@ -157,7 +350,7 @@ export default function TeamPage() {
             <div className="border-b border-purple-300 my-3"></div>
 
             <h3 className="my-1 sm:my-2 text-xl sm:text-3xl md:text-4xl text-gray-800 font-semibold leading-tight">
-              25
+              {teamStats?.totalUsers < 10 ? `0${teamStats.totalUsers}` : teamStats.totalUsers}
             </h3>
             <p className="text-sm text-gray-700">Total number of team members associated with this account.</p>
           </div>
@@ -173,7 +366,7 @@ export default function TeamPage() {
             <div className="border-b border-purple-300 my-3"></div>
 
             <h3 className="my-1 sm:my-2 text-xl sm:text-3xl md:text-4xl text-gray-800 font-semibold leading-tight">
-              20
+              {teamStats?.activeUsers < 10 ? `0${teamStats.activeUsers}` : teamStats.activeUsers}
             </h3>
             <p className="text-sm text-gray-700">Number of users currently active and able to access the system.</p>
           </div>
@@ -188,7 +381,7 @@ export default function TeamPage() {
             <div className="border-b border-purple-300 my-3"></div>
 
             <h3 className="my-1 sm:my-2 text-xl sm:text-3xl md:text-4xl text-gray-800 font-semibold leading-tight">
-              45
+              {teamStats?.totalAssessments < 10 ? `0${teamStats.totalAssessments}` : teamStats.totalAssessments}
             </h3>
             <p className="text-sm text-gray-700">Number of assessments completed by users.</p>
 
@@ -205,7 +398,9 @@ export default function TeamPage() {
             <div className="border-b border-purple-300 my-3"></div>
 
             {/* Regulation Value*/}
-            <h3 className="my-1 sm:my-2 text-xl sm:text-3xl md:text-4xl text-gray-800 font-semibold leading-tight">03</h3>
+            <h3 className="my-1 sm:my-2 text-xl sm:text-3xl md:text-4xl text-gray-800 font-semibold leading-tight">
+              {teamStats?.totalReports < 10 ? `0${teamStats.totalReports}` : teamStats.totalReports}
+            </h3>
             <p className="text-sm text-gray-700">Number of reports generated from completed assessments.</p>
 
           </div>
@@ -229,20 +424,21 @@ export default function TeamPage() {
             {/* Filter by Status */}
             <div className="flex flex-col">
               <label className="text-sm font-medium ml-1 text-gray-700">Filter by Status</label>
-              <select
-                // onChange={(e) => setRiskFilter(e.target.value)}
+              <select value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
                 className="cursor-pointer mt-1 text-gray-700 appearance-none bg-[url('/down.svg')] bg-no-repeat bg-size-[16px_16px] bg-position-[right_0.5rem_center] pl-3 pr-8 py-1.5 sm:py-2 text-sm font-medium border border-gray-300 rounded-lg bg-white/80  focus:border-[#761be6] focus:ring-1 focus:ring-[#761be6]/10 outline-none transition-all"
               >
                 <option value="all">All Users</option>
-                <option value="Active">Active Users</option>
-                <option value="Block">Block Users</option>
+                <option value="ACTIVE">Active Users</option>
+                <option value="BLOCK">Block Users</option>
               </select>
             </div>
 
             {/* SearchBar */}
             <div className="relative group">
               <LuSearch className="text-[#441851]/40 absolute left-1 sm:left-2 top-[50%] translate-y-[-50%] group-focus-within:text-gray-800" />
-              <input type="text" placeholder="Search user by name or email..."
+              <input type="text" placeholder="Search user by name or email..." value={search}
+                onChange={(e) => setSearch(e.target.value)} name="search-users" autoComplete="off"
                 className={`pl-6 sm:pl-7 pr-3 py-2 w-full sm:w-64 md:w-72 placeholder:text-[11px] sm:placeholder:text-sm font-medium text-sm text-gray-700 rounded-lg border border-gray-300 bg-white/80 placeholder-[#441851]/40 group-focus-within:border-[#761be6] focus:ring-1 focus:ring-[#761be6]/10 outline-none transition-all`}
               />
             </div>
@@ -269,47 +465,78 @@ export default function TeamPage() {
                 </thead>
                 {/* Body*/}
                 <tbody className="text-sm">
-                  <tr className="border-t py-3 border-purple-300 flex flex-col lg:table-row hover:bg-purple-50 transition">
-                    <td className="px-3 py-2 lg:py-3 lg:px-5">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <img
-                          src="https://randomuser.me/api/portraits/women/44.jpg"
-                          className="w-12 h-12 rounded-xl object-cover" alt="user"
-                        />
-                        <div className="flex flex-col gap-0.5 text-gray-900 min-w-0">
-                          <p className="font-medium leading-none">Sarah Jenkins</p>
-                          <p className="text-xs break-all">sarah.j@example.com</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="flex justify-between items-center lg:table-cell px-3 py-1.5 sm:py-2 lg:p-3">
-                      <span className="text-xs sm:text-sm font-medium leading-none text-gray-600 lg:hidden">Role</span>
-                      <span className="rounded-md bg-purple-600 px-2 py-0.5 sm:py-1 text-xs font-medium sm:uppercase text-white">
-                        Moderator
-                      </span>
-                    </td>
-                    <td className="flex justify-between items-center lg:table-cell px-3 py-1.5 sm:py-2 lg:p-3">
-                      <span className="text-xs sm:text-sm font-medium leading-none text-gray-600 lg:hidden">Status</span>
-                      <div className="flex items-center gap-2 text-green-600 font-medium">
-                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                        Active
-                      </div>
-                    </td>
-                    <td className="flex justify-between items-center font-medium lg:table-cell px-3 py-1.5 sm:py-2 lg:p-3">
-                      <span className="text-xs sm:text-sm leading-none text-gray-600 lg:hidden">Assessments</span>
-                      <span className="font-normal sm:font-medium">142</span>
-                    </td>
-                    <td className="flex justify-between items-center font-medium lg:table-cell px-3 py-1.5 sm:py-2 lg:p-3">
-                      <span className="text-xs sm:text-sm leading-none text-gray-600 lg:hidden">Reports</span>
-                      <span className="font-normal sm:font-medium">142</span>
-                    </td>
+                  {filteredMembers.length > 0 ? (
+                    filteredMembers.map((user) => (
+                      <tr key={user.id} className="border-t py-3 border-purple-300 flex flex-col lg:table-row hover:bg-purple-50 transition">
+                        <td className="px-3 py-2 lg:py-3 lg:px-5">
+                          <div className="flex items-center gap-3 min-w-0">
+                            {user.image ? (
+                              <img src={user.image || "/avatar.svg"}
+                                className="w-12 h-12 rounded-xl object-cover" alt={user.name} />
+                            ) : (
+                              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white 
+                                bg-[#761be6] text-lg">
+                                {getInitials(user.name)}
+                              </div>
+                            )}
 
-                    <td className="px-3 py-1 sm:py-2 lg:p-3">
-                      <button type="button" className="w-full lg:w-auto cursor-pointer font-medium rounded-lg bg-red-600 px-3 py-1.5 border border-red-600 text-white hover:bg-red-50 hover:text-red-600 transition">
-                        Remove Access
-                      </button>
-                    </td>
-                  </tr>
+                            <div className="flex flex-col gap-0.5 text-gray-900 min-w-0">
+                              <p className="font-medium leading-none">{user.name}</p>
+                              <p className="text-xs break-all">{user.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="flex justify-between items-center lg:table-cell px-3 py-1.5 sm:py-2 lg:p-3">
+                          <span className="text-xs sm:text-sm font-medium leading-none text-gray-600 lg:hidden">Role</span>
+                          <span className="rounded-md bg-purple-600 px-2 py-0.5 sm:py-1 text-xs font-medium sm:uppercase text-white">
+                            {user.role}
+                          </span>
+                        </td>
+                        <td className="flex justify-between items-center lg:table-cell px-3 py-1.5 sm:py-2 lg:p-3">
+                          <span className="text-xs sm:text-sm font-medium leading-none text-gray-600 lg:hidden">Status</span>
+                          <div className={`flex items-center gap-2 font-medium ${user.status === "ACTIVE" ? "text-green-600" : "text-red-600"}`}>
+                            <span className={`w-2 h-2 rounded-full animate-pulse ${user.status === "ACTIVE" ? "bg-green-500" : "bg-red-500"}`} />
+                            {user.status == "ACTIVE" ? "Active" : "Block"}
+                          </div>
+                        </td>
+                        <td className="flex justify-between items-center font-medium lg:table-cell px-3 py-1.5 sm:py-2 lg:p-3">
+                          <span className="text-xs sm:text-sm leading-none text-gray-600 lg:hidden">Assessments</span>
+                          <span className="font-normal sm:font-medium">{user.assessments < 10 ? `0${user.assessments}` : user.assessments}</span>
+                        </td>
+                        <td className="flex justify-between items-center font-medium lg:table-cell px-3 py-1.5 sm:py-2 lg:p-3">
+                          <span className="text-xs sm:text-sm leading-none text-gray-600 lg:hidden">Reports</span>
+                          <span className="font-normal sm:font-medium">{user.reports < 10 ? `0${user.reports}` : user.reports}</span>
+                        </td>
+
+                        <td className="px-3 py-1 sm:py-2 lg:p-3">
+                          {user.status === "ACTIVE" ? (
+                            <button className="w-full lg:w-auto cursor-pointer font-medium rounded-lg bg-red-600 px-3 py-1.5 border border-red-600 text-white 
+                          hover:bg-red-50 hover:text-red-600 transition">
+                              Remove Access
+                            </button>
+                          ) : (
+                            <button className="w-full lg:w-auto cursor-pointer font-medium rounded-lg bg-green-600 px-3 py-1.5 border border-green-600 text-white 
+                         hover:bg-green-50 hover:text-green-600 transition">
+                              Restore Access
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="6" className="text-center py-8">
+                        <h4 className={`font-semibold capitalize text-lg sm:text-xl bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent leading-tight`}>
+                          {search
+                            ? `No users found for "${search}"`
+                            : statusFilter !== "all"
+                              ? `No ${statusFilter.toLowerCase()} users found`
+                              : "No team members available"
+                          }
+                        </h4>
+                      </td>
+                    </tr>
+                  )}
 
                   <tr className="border-t py-3 border-purple-300 flex flex-col lg:table-row hover:bg-purple-50 transition">
                     <td className="px-3 py-2 lg:py-3 lg:px-5">
@@ -369,6 +596,8 @@ export default function TeamPage() {
           <div className="bg-white relative rounded-2xl shadow-xl w-full max-w-md px-4 sm:px-6 pb-6 pt-9">
             <RxCrossCircled onClick={() => {
               setUserModel(false);
+              setAddError("");
+              setUserEmail("");
             }}
               className="size-6 text-purple-600 shrink-0 cursor-pointer 
               absolute top-4 right-4 hover:scale-95 transition-all"/>
@@ -386,36 +615,44 @@ export default function TeamPage() {
               Invite a new user to your organization. They will receive an email with login instructions.
             </p>
 
-            {/* Inputs */}
-            <div className="space-y-4">
-              {/* Full Name */}
-              <div>
-                <label className="flex text-sm font-medium ml-2 sm:ml-1">Full Name</label>
-                <input type="text" name="name" placeholder="Enter Full Name"
-                  className={`w-full px-3 sm:px-4 py-1.5 mt-1 text-sm sm:text-base rounded-lg bg-slate-100/80 border border-gray-300 placeholder-[#441851]/40 focus:border-[#761be6] focus:ring-1 focus:ring-[#761be6]/10 outline-none transition-all`}
-                />
-              </div>
-
-              {/* Email Address */}
-              <div>
-                <label className="flex text-sm font-medium ml-2 sm:ml-1">Email Address</label>
-                <input type="email"
-                  placeholder="Enter Email Address"
-                  className="w-full px-4 py-1.5 mt-1 rounded-lg bg-slate-100 border border-gray-300 focus:border-[#761be6] focus:ring-1 focus:ring-[#761be6]/20 outline-none"
-                />
-              </div>
+            {/* Email Address */}
+            <div>
+              <label className="flex text-sm sm:text-base font-medium ml-2 sm:ml-1">Email Address</label>
+              <input type="email" value={userEmail} onFocus={() => setAddError("")}
+                onChange={(e) => setUserEmail(e.target.value)}
+                placeholder="john@example.com"
+                className={`w-full px-3 sm:px-4 py-1.5 sm:py-2 mt-1 text-sm sm:text-base rounded-lg bg-slate-100/60 border ${addError ? "border-red-500" : "border-gray-300"} placeholder-[#441851]/40 focus:border-[#761be6] focus:ring-1 focus:ring-[#761be6]/10 outline-none transition-all`}
+              />
             </div>
 
+            {addError && (
+              <p className="text-red-500 text-sm mt-2 ml-1 text-left capitalize">{addError}</p>
+            )}
+
             <div className="flex items-center justify-between pt-5">
-              <button onClick={() => setUserModel(false)}
+              <button onClick={() => {
+                setUserModel(false);
+                setAddError("");
+                setUserEmail("");
+               }}
                 className="cursor-pointer px-4 py-2 rounded-lg bg-slate-100/80 border border-gray-300 shadow-md
                 hover:bg-[#761be6] hover:text-white transition-all duration-300">
-                Cancel
+                Clear
               </button>
 
-              <button className="cursor-pointer px-4 py-2 rounded-lg bg-linear-to-r from-[#441851] to-[#761be6]
+              <button onClick={handleAddMember} disabled={addLoading}
+                className="disabled:opacity-80 disabled:cursor-not-allowed disabled:hover:from-[#441851] disabled:hover:to-[#761be6] cursor-pointer px-4 py-2 rounded-lg bg-linear-to-r from-[#441851] to-[#761be6]
                text-white hover:from-[#5e1dbf] hover:to-[#8b2bf0]">
-                Send Invitation
+                {addLoading ? (
+                  <>
+                    <p className="font-medium flex items-center gap-2">
+                      Sending...
+                      <span className="shrink-0 h-4 w-4 animate-spin rounded-full border-2 border-purple-100 border-t-transparent"></span>
+                    </p>
+                  </>
+                ) : (
+                  "Send Invitation"
+                )}
               </button>
 
             </div>
