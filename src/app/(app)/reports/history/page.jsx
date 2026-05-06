@@ -510,116 +510,142 @@ export default function ReportsHistoryPage() {
         <div className="space-y-6">
           {/* Content */}
           <div className="px-2 sm:px-4 lg:px-6 pt-6 space-y-4 sm:space-y-6">
-            {visibleReports.map((report) => (
-              <div key={report.id} className="flex flex-col md:flex-row flex-wrap md:items-center md:justify-between gap-6 md:gap-1 p-4 rounded-xl border border-purple-300 bg-white hover:bg-purple-50 hover:shadow-md hover:-translate-y-0.5 duration-300 transition-all">
-                {/* Date */}
-                <div className="flex flex-col gap-1 lg:gap-2">
-                  {latestReportDate && new Date(report.createdAt).getTime() === latestReportDate && (
-                    <span className="w-fit text-xs bg-purple-700 text-white px-2 py-1 rounded-full font-medium">
-                      Latest
-                    </span>
-                  )}
+            {visibleReports.length > 0 ? (
+              visibleReports.map((report) => (
+                <div key={report.id} className="flex flex-col md:flex-row flex-wrap md:items-center md:justify-between gap-6 md:gap-1 p-4 rounded-xl border border-purple-300 bg-white hover:bg-purple-50 hover:shadow-md hover:-translate-y-0.5 duration-300 transition-all">
+                  {/* Date */}
+                  <div className="flex flex-col gap-1 lg:gap-2">
+                    {latestReportDate && new Date(report.createdAt).getTime() === latestReportDate && (
+                      <span className="w-fit text-xs bg-purple-700 text-white px-2 py-1 rounded-full font-medium">
+                        Latest
+                      </span>
+                    )}
 
-                  <p className="text-sm font-medium text-gray-800">
-                    Generated On:{" "}
-                    <span className=" font-semibold">
-                      {report.createdAt ? (() => {
-                        const date = new Date(report.createdAt);
-                        return (
-                          <>
-                            {date.toLocaleDateString("en-US", {
-                              month: "long",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
-                            <span className="inline-block md:hidden">,</span>
-                            <br className="hidden md:block" />
-                            {date.toLocaleTimeString("en-US", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              hour12: true,
-                            })}
-                          </>
-                        );
-                      })() : "Not Created yet"
-                      }
-                    </span>
-                  </p>
+                    <p className="text-sm font-medium text-gray-800">
+                      Generated On:{" "}
+                      <span className=" font-semibold">
+                        {report.createdAt ? (() => {
+                          const date = new Date(report.createdAt);
+                          return (
+                            <>
+                              {date.toLocaleDateString("en-US", {
+                                month: "long",
+                                day: "numeric",
+                                year: "numeric",
+                              })}
+                              <span className="inline-block md:hidden">,</span>
+                              <br className="hidden md:block" />
+                              {date.toLocaleTimeString("en-US", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hour12: true,
+                              })}
+                            </>
+                          );
+                        })() : "Not Created yet"
+                        }
+                      </span>
+                    </p>
 
-                  <div className="flex items-center gap-2">
-                    <div>
-                      <h5 className="text-lg md:text-base lg:text-lg font-medium text-gray-800">Compliance Score:</h5>
-                      <div className="mt-1 h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                        <div className={`h-2 rounded-full 
+                    <div className="flex items-center gap-2">
+                      <div>
+                        <h5 className="text-lg md:text-base lg:text-lg font-medium text-gray-800">Compliance Score:</h5>
+                        <div className="mt-1 h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                          <div className={`h-2 rounded-full 
                                              ${report.score < 50 ? "bg-red-500" : report.score < 80 ? "bg-orange-500" : "bg-green-600"}
                                              `} style={{ width: `${report.score}%` }}
-                        />
+                          />
+                        </div>
                       </div>
+                      <h3 className="font-semibold text-2xl lg:text-3xl">{report.score}%</h3>
                     </div>
-                    <h3 className="font-semibold text-2xl lg:text-3xl">{report.score}%</h3>
+
+                  </div>
+
+                  {/* Gaps */}
+                  <div className="flex md:flex-col gap-4 md:gap-1 lg:gap-2">
+                    <h3 className="text-lg font-medium text-gray-800 flex items-center gap-1 md:gap-2">
+                      Risk Level:
+                      {report.riskLevel === "Low" && (
+                        <span className="w-fit text-xs font-medium text-white bg-green-600 shadow-sm rounded-full px-2 md:px-3 py-1 uppercase">
+                          Low
+                        </span>
+                      )}
+                      {report.riskLevel === "Medium" && (
+                        <span className="w-fit text-xs font-medium text-white bg-orange-500 shadow-sm rounded-full px-2 md:px-3 py-1 uppercase">
+                          Medium
+                        </span>
+                      )}
+                      {report.riskLevel === "High" && (
+                        <span className="w-fit text-xs font-medium text-white bg-red-500 shadow-sm rounded-full px-2 md:px-3 py-1 uppercase">
+                          High
+                        </span>
+                      )}
+                    </h3>
+
+                    <h3 className="text-lg font-medium text-gray-800">
+                      Open Gaps: {""}
+                      <span className="font-semibold text-2xl">
+                        {report.openGaps < 10 ? `0${report.openGaps}` : report.openGaps}
+                      </span>
+                    </h3>
+                  </div>
+
+                  {/* Button */}
+                  <div className="flex items-center gap-4">
+                    <button type="button" onClick={() => handleDownload(report.assessmentId)} disabled={pdfId === report.assessmentId}
+                      className="disabled:cursor-not-allowed disabled:opacity-70 flex items-center justify-center p-2 rounded-lg cursor-pointer active:scale-90
+                    bg-white/70 border border-purple-200 shadow-sm hover:bg-[#761be6] hover:text-white transition" title="Download PDF">
+                      {pdfId === report.assessmentId ? (
+                        <>
+                          <span className="h-4 w-4 rounded-full border-2 border-white-600 border-t-transparent animate-spin" />
+                          <span className="text-xs md:font-medium ml-1">Preparing PDF…</span>
+                        </>
+                      ) : (
+                        <MdOutlineFileDownload className="size-4 md:size-5 shrink-0" />
+                      )}
+                    </button>
+
+                    {pdfError && (
+                      <p className="text-sm font-medium text-red-600">
+                        {pdfError}
+                      </p>
+                    )}
+
+                    <Link href={`/reports/history/${report.assessmentId}`}
+                      className="text-sm px-3 py-2 border-none rounded-lg text-white bg-linear-to-r from-[#441851] to-[#761be6]
+                    hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
+                      View Report
+                    </Link>
                   </div>
 
                 </div>
+              ))
+            ) : (
+              <div className="text-center py-12 px-4">
+                <h4 className="font-semibold text-lg sm:text-xl bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">
+                  No reports match your filters
+                </h4>
 
-                {/* Gaps */}
-                <div className="flex md:flex-col gap-4 md:gap-1 lg:gap-2">
-                  <h3 className="text-lg font-medium text-gray-800 flex items-center gap-1 md:gap-2">
-                    Risk Level:
-                    {report.riskLevel === "Low" && (
-                      <span className="w-fit text-xs font-medium text-white bg-green-600 shadow-sm rounded-full px-2 md:px-3 py-1 uppercase">
-                        Low
-                      </span>
-                    )}
-                    {report.riskLevel === "Medium" && (
-                      <span className="w-fit text-xs font-medium text-white bg-orange-500 shadow-sm rounded-full px-2 md:px-3 py-1 uppercase">
-                        Medium
-                      </span>
-                    )}
-                    {report.riskLevel === "High" && (
-                      <span className="w-fit text-xs font-medium text-white bg-red-500 shadow-sm rounded-full px-2 md:px-3 py-1 uppercase">
-                        High
-                      </span>
-                    )}
-                  </h3>
+                <p className="text-sm sm:text-base text-gray-600 mt-2">
+                  {riskFilter !== "all"
+                    ? `No ${riskFilter.toLowerCase()} risk reports found. Try changing the filter.`
+                    : "No reports found with the selected criteria."}
+                </p>
 
-                  <h3 className="text-lg font-medium text-gray-800">
-                    Open Gaps: {""}
-                    <span className="font-semibold text-2xl">
-                      {report.openGaps < 10 ? `0${report.openGaps}` : report.openGaps}
-                    </span>
-                  </h3>
-                </div>
-
-                {/* Button */}
-                <div className="flex items-center gap-4">
-                  <button type="button" onClick={() => handleDownload(report.assessmentId)} disabled={pdfId === report.assessmentId}
-                    className="disabled:cursor-not-allowed disabled:opacity-70 flex items-center justify-center p-2 rounded-lg cursor-pointer active:scale-90
-                    bg-white/70 border border-purple-200 shadow-sm hover:bg-[#761be6] hover:text-white transition" title="Download PDF">
-                    {pdfId === report.assessmentId ? (
-                      <>
-                        <span className="h-4 w-4 rounded-full border-2 border-white-600 border-t-transparent animate-spin" />
-                        <span className="text-xs md:font-medium ml-1">Preparing PDF…</span>
-                      </>
-                    ) : (
-                      <MdOutlineFileDownload className="size-4 md:size-5 shrink-0" />
-                    )}
+                <div className="mt-4 flex justify-center gap-3">
+                  <button
+                    onClick={() => {
+                      setRiskFilter("all");
+                      setSortOrder("newest");
+                    }}
+                    className="cursor-pointer px-4 py-2 text-sm rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition"
+                  >
+                    Reset Filters
                   </button>
-
-                  {pdfError && (
-                    <p className="text-sm font-medium text-red-600">
-                      {pdfError}
-                    </p>
-                  )}
-
-                  <Link href={`/reports/history/${report.assessmentId}`}
-                    className="text-sm px-3 py-2 border-none rounded-lg text-white bg-linear-to-r from-[#441851] to-[#761be6]
-                    hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
-                    View Report
-                  </Link>
                 </div>
-
               </div>
-            ))}
+            )}
           </div>
 
           {/* View all Button */}

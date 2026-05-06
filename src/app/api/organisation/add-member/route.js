@@ -65,7 +65,7 @@ export async function POST(req) {
     });
 
     return Response.json(
-      { success: true, membership },
+      { success: true, },
       { status: 201 }
     );
   } catch (err) {

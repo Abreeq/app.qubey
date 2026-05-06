@@ -667,7 +667,7 @@ export default function ProfilePage() {
 
               <div className="w-full">
                 <label className="text-sm sm:text-base font-medium ml-2 sm:ml-1">Organisation Name</label>
-                <input type="text" value={profile?.organizations?.name || ""} readOnly
+                <input type="text" value={profile?.organizations?.name || "No organization created"} readOnly
                   className={`cursor-not-allowed w-full px-3 sm:px-4 py-1.5 sm:py-2 mt-1 text-sm sm:text-base rounded-lg bg-slate-100/80 border border-gray-300 placeholder-[#441851]/40 focus:border-[#761be6] focus:ring-1 focus:ring-[#761be6]/10 outline-none transition-all`}
                 />
               </div>
