@@ -90,7 +90,7 @@ export const authOptions = {
       }
 
       // handle switch update
-      if (trigger === "update" && token?.activeOrganizationId) {
+      if (trigger === "update") {
         const memberships = await prisma.membership.findMany({
           where: { userId: token.id },
           select: {

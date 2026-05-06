@@ -10,17 +10,17 @@ export async function POST(req) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { email, organizationId } = await req.json();
+    const { email } = await req.json();
 
-    if (!email || !organizationId) {
+    if (!email) {
       return Response.json(
-        { error: "Email and organizationId are required" },
+        { error: "Email is required" },
         { status: 400 }
       );
     }
 
     // 🔐 Check current user has permission (OWNER only for now)
-    const currentMembership = await checkMembership(session.user.id, "OWNER", organizationId);
+    const currentMembership = await checkMembership(session.user.id, "OWNER");
 
     if (!currentMembership || currentMembership.role !== "OWNER") {
       return Response.json({ error: "Forbidden" }, { status: 403 });
@@ -43,7 +43,7 @@ export async function POST(req) {
       where: {
         userId_organizationId: {
           userId: userToAdd.id,
-          organizationId,
+          organizationId: currentMembership.organizationId,
         },
       },
     });
@@ -59,8 +59,8 @@ export async function POST(req) {
     const membership = await prisma.membership.create({
       data: {
         userId: userToAdd.id,
-        organizationId,
-        role: role || "MEMBER",
+        organizationId: currentMembership.organizationId,
+        role: "MODERATOR", // default role
       },
     });
 
