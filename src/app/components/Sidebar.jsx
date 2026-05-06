@@ -15,11 +15,11 @@ import { useSession } from 'next-auth/react';
 import OrgSwitcher from './OrgSwitcher';
 
 export default function Sidebar({ collapsed, setCollapsed }) {
+    const { data: session } = useSession();
 
     const handleNavClick = () => {
         setCollapsed(true);
     };
-    const { data: session } = useSession();
     return (
         <aside className={`${collapsed ? "w-16" : "w-full sm:w-44 md:w-48 lg:w-50"} fixed top-18 left-0 h-[calc(100vh-72px)]
          bg-white border-r-2 border-black/10 shadow-sm transition-all duration-300 z-40`}>
