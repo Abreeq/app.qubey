@@ -70,7 +70,7 @@ export const authOptions = {
 
         // load organizations
         const memberships = await prisma.membership.findMany({
-          where: { userId: user.id },
+          where: { userId: user.id, status: "ACTIVE" },
           select: {
             role: true,
             organization: {
@@ -97,9 +97,8 @@ export const authOptions = {
 
         token.role = user.role;
         token.activeOrganizationId = user.activeOrganizationId;
-
         const memberships = await prisma.membership.findMany({
-          where: { userId: token.id },
+          where: { userId: token.id, status: "ACTIVE" },
           select: {
             role: true,
             organization: {
@@ -110,7 +109,7 @@ export const authOptions = {
             },
           },
         });
-
+        
         token.organizations = memberships.map((m) => ({
           id: m.organization.id,
           name: m.organization.name,

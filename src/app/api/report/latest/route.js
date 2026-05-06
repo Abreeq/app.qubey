@@ -8,8 +8,18 @@ export async function GET() {
   if (!session) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const userId = session.user.id;
 
-  const membership = await checkMembership(session.user.id);
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+  if (!user) {
+    return Response.json({ error: "User not found" }, { status: 404 });
+  }
+  if (!user.emailVerified) {
+    return Response.json({ error: "Email not verified" }, { status: 403 });
+  }
+  const membership = await checkMembership(session.user.id , null, user.activeOrganizationId);
 
   if (!membership) {
     return Response.json({ error: "Organization not found" }, { status: 404 });

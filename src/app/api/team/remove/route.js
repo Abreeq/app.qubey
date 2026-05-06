@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { checkMembership } from "@/lib/checkMembership";
 
-export async function DELETE(req) {
+export async function PATCH(req) {
   const session = await getServerSession(authOptions);
 
   if (!session) {
@@ -33,12 +33,15 @@ export async function DELETE(req) {
     );
   }
 
-  await prisma.membership.delete({
+  await prisma.membership.update({
     where: {
       userId_organizationId: {
         userId,
         organizationId,
       },
+    },
+    data: {
+      status: "BLOCKED",
     },
   });
 

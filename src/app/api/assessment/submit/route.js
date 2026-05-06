@@ -1,11 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { GoogleGenAI } from "@google/genai";
-
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
+import { generateWithAi } from "@/lib/generateWithAi";
 
 function safeJSON(text) {
   try {
@@ -20,6 +16,7 @@ function safeJSON(text) {
 export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);
+    
     if (!session) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -164,11 +161,7 @@ ${JSON.stringify(weakQuestions, null, 2)}
     };
 
     try {
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt,
-      });
-
+      const response = await generateWithAi(prompt);  
       const parsed = safeJSON(response.text);
 
       if (parsed?.summary) {
