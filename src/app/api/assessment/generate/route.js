@@ -1,21 +1,22 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { GoogleGenAI } from "@google/genai";
 import { extractJSON } from "@/lib/extractJSON";
 import { checkMembership } from "@/lib/checkMembership";
-
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
+import { generateWithAi } from "@/lib/generateWithAi";
 
 export async function POST(req) {
   const session = await getServerSession(authOptions);
   if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
   
   const { forceNew } = await req.json().catch(() => ({}));
-  
-  const membership = await checkMembership(session.user.id);
+  const userId = session.user.id;
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) {
+    return Response.json({ error: "User not found" }, { status: 404 });
+  }
+
+  const membership = await checkMembership(session.user.id , null, user.activeOrganizationId);
 
   if (!membership) {
     return Response.json({ error: "Organization not found" }, { status: 404 });
@@ -83,12 +84,7 @@ Instructions:
 -	`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash", // ✅ your model
-      contents: prompt,
-    });
-
-    const rawText = response.text;
+    const rawText = await generateWithAi(prompt);
 
     if (!rawText) {
       return Response.json(

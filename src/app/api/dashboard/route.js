@@ -24,7 +24,7 @@ export async function GET() {
     return Response.json({ error: "Email not verified" }, { status: 403 });
   }
   
-  const membership = await checkMembership(userId);
+  const membership = await checkMembership(userId , null, user.activeOrganizationId);
 
   if (!membership) {
     return Response.json({ error: "Organization not found" }, { status: 404 });
