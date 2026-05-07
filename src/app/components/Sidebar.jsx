@@ -11,24 +11,18 @@ import { FaUsersCog } from "react-icons/fa";
 import { IoHelpCircle } from "react-icons/io5";
 
 import { usePathname } from "next/navigation";
-import { useSession } from 'next-auth/react';
 import OrgSwitcher from './OrgSwitcher';
 
 export default function Sidebar({ collapsed, setCollapsed }) {
-    const { data: session } = useSession();
-
     const handleNavClick = () => {
         setCollapsed(true);
     };
     return (
-        <aside className={`${collapsed ? "w-16" : "w-full sm:w-44 md:w-48 lg:w-50"} fixed top-18 left-0 h-[calc(100vh-72px)]
+        <aside className={`${collapsed ? "w-16" : "w-full sm:w-46 md:w-50 lg:w-54"} fixed top-18 left-0 h-[calc(100vh-72px)]
          bg-white border-r-2 border-black/10 shadow-sm transition-all duration-300 z-40`}>
             {/* Sidebar Header (affected by collapse) */}
             <div className="h-14 flex items-center justify-between px-3 border-b border-purple-400">
                 {!collapsed && (
-                    // <span className="font-bold text-sm uppercase bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent tracking-wide">
-                    //     {session?.user?.organizations[0]?.name || "Menu"}
-                    // </span>
                     <OrgSwitcher />
                 )}
                 <div className="relative group">

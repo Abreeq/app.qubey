@@ -125,9 +125,9 @@ export default function Navbar() {
       <header className="sticky top-0 z-50 w-full border-b border-black/10 shadow-sm bg-white">
         <div className="custom-container flex h-18 items-center justify-between px-3 sm:px-4">
           {/* LEFT SIDE */}
-          <div ref={logoRef} className="flex items-center gap-2 md:gap-4 w-full min-w-0">
+          <div ref={logoRef} className="flex items-center gap-2 md:gap-6 w-full min-w-0">
             {/* Logo */}
-            <Link href="https://staging.qubey.ae/" className="border-r border-gray-300 pr-3 sm:pr-6 flex items-center shrink-0">
+            <Link href="https://staging.qubey.ae/" className="border-r border-gray-300 pr-5 sm:pr-10 flex items-center shrink-0">
               <img src="/logo.png" alt="Qubey Logo" className="h-8 sm:h-12 w-auto object-contain" />
             </Link>
 

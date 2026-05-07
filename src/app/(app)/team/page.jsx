@@ -7,12 +7,9 @@ import { RxCrossCircled } from "react-icons/rx";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
 
 
 export default function TeamPage() {
-  const { data: session } = useSession(); 
-
   const [teamStats, setTeamStats] = useState({});
   const [members, setMembers] = useState([]);
   const [userModel, setUserModel] = useState(false);
@@ -27,7 +24,8 @@ export default function TeamPage() {
   const [loading, setLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [addLoading, setAddLoading] = useState(false);
-
+  const [actionLoading, setActionLoading] = useState(null);
+  const [actionError, setActionError] = useState(null);
 
   // For Loader
   useEffect(() => {
@@ -63,29 +61,32 @@ export default function TeamPage() {
 
   // To get the Data
   useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await fetch("/api/team");
-        const data = await res.json();
-
-        if (!res.ok) {
-          setError(data.error || "Failed to load team data");
-          setLoading(false);
-          return;
-        }
-// console.log(data);
-        setTeamStats(data.stats);
-        setMembers(data.members);
-      } catch (err) {
-        setError("Something went wrong while loading team data.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    load();
+    loadTeamData();
   }, []);
 
+
+  const loadTeamData = async () => {
+    try {
+      const res = await fetch("/api/team");
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (res.status === 403) {
+          setError("FORBIDDEN");
+        } else {
+          setError(data.error || "Failed to load team data");
+        }
+        return;
+      }
+
+      setTeamStats(data.stats);
+      setMembers(data.members);
+    } catch (err) {
+      setError("Something went wrong while loading team data.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // For Filter
   const filteredMembers = members.filter((user) => {
@@ -108,10 +109,17 @@ export default function TeamPage() {
     return "U";// fallback: User;
   };
 
-
+  // For Adding New Member
   const handleAddMember = async () => {
     if (!userEmail) {
       setAddError("Email Address is Required");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(userEmail.trim())) {
+      setAddError("Please enter a valid email address");
       return;
     }
 
@@ -125,25 +133,30 @@ export default function TeamPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           email: userEmail,
         }),
       });
 
       const data = await res.json();
+
       if (!res.ok) {
         setAddError(data.error || "Failed to add member");
         return;
       }
 
-      setAddSuccess("Invitation sent successfully");
-      setTimeout(() => setAddSuccess(""), 3000);
-
       //update UI instantly
-      // setMembers((prev) => [...prev, data.member]);
+      await loadTeamData();
 
+      setAddLoading(false);
+
+      setAddSuccess("Team member added successfully");
       setUserEmail("");
-      setUserModel(false);
+
+      setTimeout(() => {
+        setAddSuccess("");
+        setUserModel(false);
+      }, 700);
 
     } catch (err) {
       setAddError("Something went wrong. Please try again.");
@@ -151,6 +164,138 @@ export default function TeamPage() {
       setAddLoading(false);
     }
   };
+
+  // For Removing Access
+  const handleRemoveAccess = async (userId) => {
+    try {
+      setActionLoading(userId);
+      setActionError(null);
+
+      const res = await fetch("/api/team/remove", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setActionError({
+          userId,
+          message: data.error || "Failed to remove access",
+        });
+
+        setTimeout(() => {
+          setActionError(null);
+        }, 1400);
+
+        return;
+      }
+
+      await loadTeamData();
+
+    } catch (err) {
+      setActionError({
+        userId,
+        message: "Something went wrong. Please try again.",
+      });
+
+      setTimeout(() => {
+        setActionError(null);
+      }, 1400);
+
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // For Restoring Access
+  const handleRestoreAccess = async (userId) => {
+    try {
+      setActionLoading(userId);
+      setActionError("");
+
+      const res = await fetch("/api/team/restore", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setActionError({
+          userId,
+          message: data.error || "Failed to restore access",
+        });
+
+        setTimeout(() => {
+          setActionError(null);
+        }, 1400);
+
+        return;
+      }
+
+      await loadTeamData();
+
+    } catch (err) {
+      setActionError({
+        userId,
+        message: "Something went wrong. Please try again.",
+      });
+
+      setTimeout(() => {
+        setActionError(null);
+      }, 1400);
+
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+
+  // For Forbidden Error
+  if (error === "FORBIDDEN") {
+    return (
+      <main className="max-w-5xl mx-auto mt-12 relative overflow-hidden rounded-2xl bg-linear-to-tr from-purple-100 via-white to-white px-6 py-10">
+
+        <div className="absolute top-4 right-4 w-84 h-84 bg-purple-100 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+
+        <div className="relative text-center space-y-5">
+
+          <h2 className="font-semibold text-2xl sm:text-3xl bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">
+            Access Restricted
+          </h2>
+
+          <p className="text-base sm:text-lg text-gray-700 font-medium max-w-2xl mx-auto">
+            You do not have permission to access the Team Management page.
+          </p>
+
+          <p className="text-sm sm:text-base text-gray-600 max-w-2xl mx-auto">
+            Only organization owners can manage team members, permissions, and access controls.
+          </p>
+
+          <div className="flex justify-center">
+            <Link
+              href="/dashboard"
+              className="rounded-lg bg-linear-to-r from-[#441851] to-[#761be6] text-white px-5 py-2.5 hover:from-[#5e1dbf] hover:to-[#8b2bf0] font-medium transition"
+            >
+              Back to Dashboard
+            </Link>
+          </div>
+
+        </div>
+      </main>
+    );
+  }
 
   // For Error
   if (error) {
@@ -326,15 +471,8 @@ export default function TeamPage() {
             className="cursor-pointer rounded-4xl bg-linear-to-r from-[#441851] to-[#761be6] 
               px-3 md:px-4 py-2 flex items-center gap-2 hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
             <HiUserAdd className="size-3 sm:size-4 text-white shrink-0" />
-            <span className="text-sm sm:text-base md:font-medium text-white">Add New User</span>
+            <span className="text-sm sm:text-base md:font-medium text-white">Add New Member</span>
           </button>
-
-          {addSuccess && (
-            <p className="text-white bg-green-600 inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm ml-2 capitalize font-medium text-left">
-              {addSuccess}
-            </p>
-          )}
-
         </div>
       </div>
 
@@ -430,7 +568,7 @@ export default function TeamPage() {
               >
                 <option value="all">All Users</option>
                 <option value="ACTIVE">Active Users</option>
-                <option value="BLOCK">Block Users</option>
+                <option value="BLOCKED">Block Users</option>
               </select>
             </div>
 
@@ -456,11 +594,11 @@ export default function TeamPage() {
                 <thead className="hidden lg:table-header-group">
                   <tr className="bg-purple-50">
                     <th className="py-3 px-5 w-2/5 text-left font-semibold bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">Members</th>
-                    <th className="p-3 w-1/5 text-left font-semibold bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">Role</th>
+                    <th className="p-3 w-1/4 text-left font-semibold bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">Role</th>
                     <th className="p-3 w-1/5 text-left font-semibold bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">Status</th>
-                    <th className="p-3 w-1/5 text-left font-semibold bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">Assessments</th>
-                    <th className="p-3 w-1/5 text-left font-semibold bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">Reports</th>
-                    <th className="p-3 w-1/5 text-left font-semibold bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">Actions</th>
+                    <th className="p-3 w-1/6 text-left font-semibold bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">Assessments</th>
+                    <th className="p-3 w-1/6 text-left font-semibold bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">Reports</th>
+                    <th className="p-3 w-1/4 text-left font-semibold bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">Actions</th>
                   </tr>
                 </thead>
                 {/* Body*/}
@@ -496,7 +634,7 @@ export default function TeamPage() {
                           <span className="text-xs sm:text-sm font-medium leading-none text-gray-600 lg:hidden">Status</span>
                           <div className={`flex items-center gap-2 font-medium ${user.status === "ACTIVE" ? "text-green-600" : "text-red-600"}`}>
                             <span className={`w-2 h-2 rounded-full animate-pulse ${user.status === "ACTIVE" ? "bg-green-500" : "bg-red-500"}`} />
-                            {user.status == "ACTIVE" ? "Active" : "Block"}
+                            {user.status == "ACTIVE" ? "Active" : "Blocked"}
                           </div>
                         </td>
                         <td className="flex justify-between items-center font-medium lg:table-cell px-3 py-1.5 sm:py-2 lg:p-3">
@@ -509,16 +647,45 @@ export default function TeamPage() {
                         </td>
 
                         <td className="px-3 py-1 sm:py-2 lg:p-3">
-                          {user.status === "ACTIVE" ? (
-                            <button className="w-full lg:w-auto cursor-pointer font-medium rounded-lg bg-red-600 px-3 py-1.5 border border-red-600 text-white 
-                          hover:bg-red-50 hover:text-red-600 transition">
-                              Remove Access
+                          {user.role === "OWNER" ? (
+                            <span className="inline-flex items-center rounded-lg bg-purple-100 px-3 py-1.5 text-sm font-medium text-purple-700">
+                              Protected Account
+                            </span>
+                          ) : user.status === "ACTIVE" ? (
+                            <button onClick={() => handleRemoveAccess(user.id)}
+                              disabled={actionLoading === user.id}
+                              className="disabled:opacity-80 disabled:cursor-not-allowed disabled:hover:bg-red-600 disabled:hover:text-white w-full lg:w-auto cursor-pointer font-medium rounded-lg bg-red-600 px-3 py-1.5 border border-red-600 text-white hover:bg-red-50 hover:text-red-600 transition">
+                              {actionLoading === user.id ? (
+                                <>
+                                  <p className="font-medium flex items-center gap-2">
+                                    Removing...
+                                    <span className="shrink-0 h-4 w-4 animate-spin rounded-full border-2 border-purple-100 border-t-transparent"></span>
+                                  </p>
+                                </>
+                              ) : (
+                                "Remove Access"
+                              )}
                             </button>
                           ) : (
-                            <button className="w-full lg:w-auto cursor-pointer font-medium rounded-lg bg-green-600 px-3 py-1.5 border border-green-600 text-white 
-                         hover:bg-green-50 hover:text-green-600 transition">
-                              Restore Access
+                            <button onClick={() => handleRestoreAccess(user.id)}
+                              disabled={actionLoading === user.id}
+                              className="disabled:opacity-80 disabled:cursor-not-allowed disabled:hover:bg-green-600 disabled:hover:text-white w-full lg:w-auto cursor-pointer font-medium rounded-lg bg-green-600 px-3 py-1.5 border border-green-600 text-white hover:bg-green-50 hover:text-green-600 transition">
+                              {actionLoading === user.id ? (
+                                <>
+                                  <p className="font-medium flex items-center gap-2">
+                                    Restoring...
+                                    <span className="shrink-0 h-4 w-4 animate-spin rounded-full border-2 border-purple-100 border-t-transparent"></span>
+                                  </p>
+                                </>
+                              ) : (
+                                "Restore Access"
+                              )}
                             </button>
+                          )}
+                          {actionError?.userId === user.id && (
+                            <p className="mt-2 text-xs font-medium text-red-500">
+                              {actionError.message}
+                            </p>
                           )}
                         </td>
                       </tr>
@@ -537,52 +704,6 @@ export default function TeamPage() {
                       </td>
                     </tr>
                   )}
-
-                  <tr className="border-t py-3 border-purple-300 flex flex-col lg:table-row hover:bg-purple-50 transition">
-                    <td className="px-3 py-2 lg:py-3 lg:px-5">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <img
-                          src="https://randomuser.me/api/portraits/women/44.jpg"
-                          className="w-12 h-12 rounded-xl object-cover" alt="user"
-                        />
-                        <div className="flex flex-col gap-0.5 text-gray-900 min-w-0">
-                          <p className="font-medium leading-none">Sarah Jenkins</p>
-                          <p className="text-xs break-all">sarah.j@example.com</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="flex justify-between items-center lg:table-cell px-3 py-1.5 sm:py-2 lg:p-3">
-                      <span className="text-xs sm:text-sm font-medium leading-none text-gray-600 lg:hidden">Role</span>
-                      <span className="rounded-md bg-purple-600 px-2 py-0.5 sm:py-1 text-xs font-medium sm:uppercase text-white">
-                        Moderator
-                      </span>
-                    </td>
-                    <td className="flex justify-between items-center lg:table-cell px-3 py-1.5 sm:py-2 lg:p-3">
-                      <span className="text-xs sm:text-sm font-medium leading-none text-gray-600 lg:hidden">Status</span>
-                      <div className="flex items-center gap-2 text-red-600 font-medium">
-                        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                        Block
-                      </div>
-                    </td>
-                    <td className="flex justify-between items-center font-medium lg:table-cell px-3 py-1.5 sm:py-2 lg:p-3">
-                      <span className="text-xs sm:text-sm leading-none text-gray-600 lg:hidden">Assessments</span>
-                      <span className="font-normal sm:font-medium">142</span>
-                    </td>
-                    <td className="flex justify-between items-center font-medium lg:table-cell px-3 py-1.5 sm:py-2 lg:p-3">
-                      <span className="text-xs sm:text-sm leading-none text-gray-600 lg:hidden">Reports</span>
-                      <span className="font-normal sm:font-medium">142</span>
-                    </td>
-
-                    <td className="px-3 py-1 sm:py-2 lg:p-3">
-                      <button
-                        type="button"
-                        className="w-full lg:w-auto cursor-pointer font-medium rounded-lg bg-green-600 px-3 py-1.5 border border-green-600 text-white 
-                       hover:bg-green-50 hover:text-green-600 hover:border-green-600 transition duration-200 ease-in-out"
-                      >
-                        Restore Access
-                      </button>
-                    </td>
-                  </tr>
                 </tbody>
               </table>
             </div>
@@ -612,15 +733,16 @@ export default function TeamPage() {
 
             {/* Subtext */}
             <p className="text-gray-700 text-sm mt-1 mb-4">
-              Invite a new user to your organization. They will receive an email with login instructions.
+              Add an existing platform user to your organization using their registered email address.
             </p>
 
             {/* Email Address */}
             <div>
               <label className="flex text-sm sm:text-base font-medium ml-2 sm:ml-1">Email Address</label>
-              <input type="email" value={userEmail} onFocus={() => setAddError("")}
-                onChange={(e) => setUserEmail(e.target.value)}
-                placeholder="john@example.com"
+              <input type="email" value={userEmail} onFocus={() => setAddError("")} name="team-member-email"
+                onChange={(e) => setUserEmail(e.target.value)} autoComplete="off"
+                spellCheck={false} autoCorrect="off" autoCapitalize="none"
+                placeholder="Enter user's registered email"
                 className={`w-full px-3 sm:px-4 py-1.5 sm:py-2 mt-1 text-sm sm:text-base rounded-lg bg-slate-100/60 border ${addError ? "border-red-500" : "border-gray-300"} placeholder-[#441851]/40 focus:border-[#761be6] focus:ring-1 focus:ring-[#761be6]/10 outline-none transition-all`}
               />
             </div>
@@ -629,12 +751,18 @@ export default function TeamPage() {
               <p className="text-red-500 text-sm mt-2 ml-1 text-left capitalize">{addError}</p>
             )}
 
+            {addSuccess && (
+              <p className="text-white mt-3 bg-green-600 inline-flex px-3 py-1.5 rounded-md text-sm capitalize font-medium text-left">
+                {addSuccess}
+              </p>
+            )}
+
             <div className="flex items-center justify-between pt-5">
               <button onClick={() => {
                 setUserModel(false);
                 setAddError("");
                 setUserEmail("");
-               }}
+              }}
                 className="cursor-pointer px-4 py-2 rounded-lg bg-slate-100/80 border border-gray-300 shadow-md
                 hover:bg-[#761be6] hover:text-white transition-all duration-300">
                 Clear
@@ -646,12 +774,12 @@ export default function TeamPage() {
                 {addLoading ? (
                   <>
                     <p className="font-medium flex items-center gap-2">
-                      Sending...
+                      Adding Member...
                       <span className="shrink-0 h-4 w-4 animate-spin rounded-full border-2 border-purple-100 border-t-transparent"></span>
                     </p>
                   </>
                 ) : (
-                  "Send Invitation"
+                  "Add Member"
                 )}
               </button>
 
