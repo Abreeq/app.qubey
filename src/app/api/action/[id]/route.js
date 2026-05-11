@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { GoogleGenAI } from "@google/genai";
 import { extractJSON } from "@/lib/extractJSON";
+import { checkMembership } from "@/lib/checkMembership";
 
 const ai = new GoogleGenAI({});
 
@@ -21,9 +22,13 @@ export async function GET(req, context) {
     return Response.json({ error: "Action not found" }, { status: 404 });
   }
 
-  const org = await prisma.organization.findFirst({
-    where: { ownerId: session.user.id },
-  });
+  const membership = await checkMembership(session.user.id, null, action.organizationId);
+
+  if (!membership) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const org = membership.organization;
 
   if (!org || action.organizationId !== org.id) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
