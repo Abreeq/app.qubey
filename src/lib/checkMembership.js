@@ -6,6 +6,7 @@ export async function checkMembership(userId , role = null, organizationId = nul
       userId: userId,
       ...(role && { role }),
       ...(organizationId && { organizationId }),
+      status: "ACTIVE",
     },
     include: {
       organization: true,

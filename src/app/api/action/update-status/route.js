@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { checkMembership } from "@/lib/checkMembership";
 
 export async function POST(req) {
   const session = await getServerSession(authOptions);
@@ -18,14 +19,13 @@ export async function POST(req) {
     return Response.json({ error: "Invalid status" }, { status: 400 });
   }
 
-  const org = await prisma.organization.findFirst({
-    where: { ownerId: session.user.id },
-  });
+  const membership = await checkMembership(session.user.id, null, session.user.activeOrganizationId);
 
-  if (!org) {
+  if (!membership) {
     return Response.json({ error: "Organization not found" }, { status: 404 });
   }
-
+  const org = membership.organization;
+  
   const action = await prisma.complianceAction.findUnique({
     where: { id: actionId },
   });
