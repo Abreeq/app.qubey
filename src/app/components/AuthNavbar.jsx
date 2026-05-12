@@ -6,8 +6,11 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { RiMenu3Fill } from "react-icons/ri";
 import { usePathname, useRouter } from 'next/navigation';
+import { useSession } from "next-auth/react";
+import ProfileDropdown from "./ProfileDropdown";
 
 export default function Header() {
+    const { data: session } = useSession();
     const [open, setOpen] = useState(false);
     const logoRef = useRef(null);
     const menuRef = useRef([]);
@@ -117,12 +120,16 @@ export default function Header() {
 
                     {/* Desktop Actions */}
                     <div ref={ctaRef} className="hidden lg:flex">
-                        <Link href="https://app-qubey.vercel.app/auth"
-                            className="rounded-lg bg-linear-to-r from-[#441851] to-[#761be6] px-4 py-2 
-                            font-medium text-white text-nowrap hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition"
-                        >
-                            Sign in
-                        </Link>
+                        {session?.user ? (
+                            <ProfileDropdown user={session.user} />
+                        ) : (
+                            <Link href="https://app-qubey.vercel.app/auth"
+                                className="rounded-lg bg-linear-to-r from-[#441851] to-[#761be6] px-4 py-2 
+                                font-medium text-white text-nowrap hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition"
+                            >
+                                Sign in
+                            </Link>
+                        )}
                     </div>
 
                     {/* Mobile Hamburger */}
@@ -156,11 +163,17 @@ export default function Header() {
 
                             {/* Mobile CTA */}
                             <div className="mt-3 flex flex-col">
-                                <Link href="https://app-qubey.vercel.app/auth"
-                                    rel="noopener noreferrer"
-                                    className="rounded-lg bg-linear-to-r from-[#441851] to-[#761be6] px-4 py-2 text-center text-white font-semibold">
-                                    Sign in
-                                </Link>
+                                {session?.user ? (
+                                    <ProfileDropdown user={session.user} />
+                                ) : (
+                                    <Link
+                                        href="https://app-qubey.vercel.app/auth"
+                                        rel="noopener noreferrer"
+                                        className="rounded-lg bg-linear-to-r from-[#441851] to-[#761be6] px-4 py-2 text-center text-white font-semibold"
+                                    >
+                                        Sign in
+                                    </Link>
+                                )}
                             </div>
                         </div>
                     </div>

@@ -52,11 +52,12 @@ export const authOptions = {
   },
 
   callbacks: {
-    async jwt({ token, user, trigger }) {
+    async jwt({ token, user, trigger, session }) {
       // Initial login
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.picture = user.image;
 
         // default active org
         if (!token.activeOrganizationId) {
@@ -91,12 +92,22 @@ export const authOptions = {
 
       // handle switch update
       if (trigger === "update") {
+        if (session?.image) {
+          token.picture = session.image;
+        }
+
         const user = await prisma.user.findUnique({
           where: { id: token.id },
         });
 
         token.role = user.role;
         token.activeOrganizationId = user.activeOrganizationId;
+
+        // ✅ Also sync image from DB in case it was updated elsewhere
+        if (!session?.image) {
+          token.picture = user.image;
+        }
+
         const memberships = await prisma.membership.findMany({
           where: { userId: token.id, status: "ACTIVE" },
           select: {
@@ -109,7 +120,7 @@ export const authOptions = {
             },
           },
         });
-        
+
         token.organizations = memberships.map((m) => ({
           id: m.organization.id,
           name: m.organization.name,
@@ -125,6 +136,7 @@ export const authOptions = {
       session.user.role = token.role;
       session.user.organizations = token.organizations || [];
       session.user.activeOrganizationId = token.activeOrganizationId || null;
+      session.user.image = token.picture;
 
       return session;
     },
