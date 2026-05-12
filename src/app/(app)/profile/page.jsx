@@ -1,13 +1,13 @@
 "use client";
 
-import { FaArrowLeft, FaCircleInfo, FaCircleUser } from "react-icons/fa6";
-import { FaUserLock, FaMinusCircle, FaMapMarkerAlt, FaEnvelope, FaCheckCircle, FaRegCreditCard } from "react-icons/fa";
+import { FaArrowLeft, FaCircleInfo, FaCircleUser, FaTrash } from "react-icons/fa6";
+import { FaUserLock, FaMinusCircle, FaMapMarkerAlt, FaEnvelope, FaCheckCircle, FaRegCreditCard, FaCamera } from "react-icons/fa";
 import { IoMail } from "react-icons/io5";
 import { PiShareNetworkBold } from "react-icons/pi";
 import { FcGoogle } from "react-icons/fc";
 import { RxCrossCircled } from "react-icons/rx";
 import { BsPatchCheckFill } from "react-icons/bs";
-import { LuCrown } from "react-icons/lu";
+import { LuCrown, LuUpload } from "react-icons/lu";
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -49,6 +49,9 @@ export default function ProfilePage() {
   const [updateLoading, setUpdateLoading] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState("");
 
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [removingAvatar, setRemovingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
 
   const inputRefs = useRef([]);  //For OTP
 
@@ -442,6 +445,91 @@ export default function ProfilePage() {
     }
   };
 
+  // For Adding Image
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Client-side validation before even hitting the API
+    const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!validTypes.includes(file.type)) {
+      setAvatarError("Only JPG, PNG, WEBP or GIF allowed");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setAvatarError("Image must be under 2MB");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("avatar", file); // must match the name in the API route ("avatar")
+
+    try {
+      setUploadingAvatar(true);
+      setAvatarError("");
+
+      const res = await fetch("/api/user/upload-image", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setAvatarError(data.error || "Upload failed");
+        return;
+      }
+
+      // Update the profile state so the new image shows immediately
+      setProfile((prev) => ({ ...prev, image: data.imageUrl }));
+
+      await update({ image: data.imageUrl }); // refresh the NextAuth session too
+
+    } catch (err) {
+      setAvatarError("Something went wrong. Try again.");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+
+  // For Removing Image
+  const handleRemoveAvatar = async () => {
+    if (!profile.image) {
+      setAvatarError("No profile picture to remove.");
+      return;
+    }
+
+    try {
+      setRemovingAvatar(true);
+      setAvatarError("");
+
+      const res = await fetch("/api/user/remove-image", {
+        method: "DELETE",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setAvatarError(data.error || "Failed to remove image");
+        return;
+      }
+
+      // Clear image from profile state → shows initials again
+      setProfile((prev) => ({ ...prev, image: null }));
+
+      // Update session so navbar also clears the image
+      await update({ image: null });
+
+    } catch (err) {
+      setAvatarError("Something went wrong. Try again.");
+    } finally {
+      setRemovingAvatar(false);
+    }
+  };
+
+
   // For Unlinking Google Account
   const handleUnlink = async () => {
     try {
@@ -584,26 +672,86 @@ export default function ProfilePage() {
           <div className="relative flex justify-center">
             {/* Gradient top */}
             <div className="relative w-full" style={{ background: "linear-gradient(to right, #5e1dbf, #8b2bf0)", height: "8rem" }} />
+
             {/* Avatar */}
-            <div className={`absolute rounded-full bg-white border-4 border-gray-100 backdrop-blur-3xl ${profile.image ? "p-1" : "p-0"}`} style={{ bottom: "-4rem" }}>
-              {profile.image ? (
-                <Image
-                  src={profile.image || "/avatar.svg"}
-                  alt="profile"
-                  width={100}
-                  height={100}
-                  className="rounded-full object-cover"
-                />) : (
-                <div className="w-25 h-25 rounded-full flex items-center justify-center text-white font-semibold 
-                 bg-linear-to-r from-[#441851] to-[#761be6] text-2xl">
-                  {getInitials(profile?.name)}
-                </div>
-              )}
+            <div className="group absolute" style={{ bottom: "-4rem" }}>
+              <div className={`relative rounded-full ${!isGoogleUser ? "cursor-pointer" : ""} bg-white   border-4 border-gray-100 backdrop-blur-3xl`}>
+                {profile.image ? (
+                  <Image
+                    src={profile.image || "/avatar.svg"}
+                    alt="profile"
+                    width={108}
+                    height={108}
+                    className="rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-25 h-25 rounded-full flex items-center justify-center text-white font-semibold bg-linear-to-r from-[#441851] to-[#761be6] text-2xl">
+                    {getInitials(profile?.name)}
+                  </div>
+                )}
+
+                {!isGoogleUser && (
+                  <>
+                    {!uploadingAvatar && !removingAvatar && (
+                      <div className="absolute bottom-0 right-0 z-10 rounded-full size-6 bg-purple-700 flex items-center justify-center">
+                        <FaCamera className="text-white size-3" />
+                      </div>
+                    )}
+
+                    {(uploadingAvatar || removingAvatar) ? (
+                      <div className="absolute inset-0 rounded-full bg-black/70 flex flex-col items-center justify-center gap-1">
+                        <span className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        <span className="text-xs text-white">
+                          {uploadingAvatar ? "Uploading..." : "Removing..."}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="absolute inset-0 rounded-full bg-black/70 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+
+                        <label htmlFor="avatar-upload"
+                          className="flex flex-col items-center gap-1 hover:scale-110 cursor-pointer transition-transform"
+                        >
+                          <LuUpload className="text-white size-3" />
+                          <span className="text-[10px] text-white">Upload</span>
+                        </label>
+
+                        {!isGoogleUser && profile.image && (
+                          <>
+                            <div className="w-px h-10 bg-white/30" />
+
+                            <button onClick={handleRemoveAvatar} disabled={removingAvatar || uploadingAvatar}
+                              className="disabled:opacity-60 disabled:cursor-not-allowed flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform"
+                            >
+                              <FaTrash className="text-white size-3" />
+                              <span className="text-[10px] text-white">Remove</span>
+                            </button>
+                          </>
+                        )}
+
+                        {/* Hidden file input */}
+                        <input id="avatar-upload"
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          className="hidden"
+                          onChange={handleAvatarUpload}
+                          disabled={uploadingAvatar}
+                          aria-label="Upload profile picture"
+                        />
+                      </div>
+                    )}
+
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
           {/* Content */}
           <div className="p-4 sm:p-6 text-center">
+            {avatarError && (
+              <p className="text-red-500 text-xs mb-2 font-medium">{avatarError}</p>
+            )}
+
             {/* Name */}
             <h2 className="font-semibold text-lg sm:text-xl flex items-center justify-center gap-2">
               <span className="bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">{profile.name}</span>
@@ -628,9 +776,15 @@ export default function ProfilePage() {
                 <FaCircleInfo className="text-purple-700 shrink-0" />
                 <span>Synced Profile</span>
               </div>
-              <p className="text-purple-600 text-xs">
-                Your profile picture is managed by your login provider.
-              </p>
+              {isGoogleUser ? (
+                <p className="text-purple-600 text-xs">
+                  Your profile picture is managed by your login provider.
+                </p>
+              ) : (
+                <p className="text-purple-600 text-xs">
+                  Personalize your account by uploading a profile photo.
+                </p>
+              )}
             </div>
 
           </div>
@@ -656,7 +810,7 @@ export default function ProfilePage() {
               />
             </div>
 
-           {/* Email & Organisation */}
+            {/* Email & Organisation */}
             <div className="flex items-center gap-6">
               <div className="w-full">
                 <label className="text-sm sm:text-base font-medium ml-2 sm:ml-1">Email Address</label>
