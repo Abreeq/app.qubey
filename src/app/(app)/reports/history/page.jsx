@@ -557,7 +557,7 @@ export default function ReportsHistoryPage() {
                           />
                         </div>
                       </div>
-                      <h3 className="font-semibold text-2xl lg:text-3xl">{report.score}%</h3>
+                      <h3 className="font-semibold text-2xl lg:text-3xl">{(report.score).toFixed(0)}%</h3>
                     </div>
 
                   </div>

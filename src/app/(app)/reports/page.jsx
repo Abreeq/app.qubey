@@ -363,7 +363,7 @@ export default function ReportsPage() {
                                 </svg>
                                 <p className="absolute inset-0 flex flex-col items-center justify-center text-lg sm:text-2xl
                                  font-semibold">
-                                    {report.score}%
+                                    {(report.score).toFixed(1)}%
                                 </p>
                             </div>
 

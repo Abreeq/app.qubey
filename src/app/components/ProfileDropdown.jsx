@@ -10,7 +10,32 @@ import { IoLogOut } from "react-icons/io5";
 
 export default function ProfileDropdown({ user }) {
   const [open, setOpen] = useState(false);
+  const [localImage, setLocalImage] = useState(user.image);
   const menuRef = useRef(null);
+
+  useEffect(() => {
+    const fetchFreshImage = async () => {
+      try {
+        const res = await fetch("/api/user/avatar");
+        const data = await res.json();
+        if (res.ok) {
+          setLocalImage(data.image);
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    fetchFreshImage();
+  }, []);
+
+
+  // updates from profile page same tab
+  useEffect(() => {
+    const handler = (e) => setLocalImage(e.detail.image);
+    window.addEventListener("avatar-updated", handler);
+    return () => window.removeEventListener("avatar-updated", handler);
+  }, []);
 
   // Close on outside click
   useEffect(() => {
@@ -39,9 +64,9 @@ export default function ProfileDropdown({ user }) {
         aria-haspopup="menu"
         aria-expanded={open}
       >
-        {user.image ? (
+        {localImage ? (
           <Image
-            src={user.image}
+            src={localImage}
             alt="Profile"
             width={36}
             height={36}
@@ -58,11 +83,11 @@ export default function ProfileDropdown({ user }) {
       {open && (
         <div className="absolute top-9 lg:right-0 mt-3 w-64 bg-white/90 border border-purple-200 shadow-xl rounded-xl z-50 overflow-hidden">
           <div className="flex items-center gap-3 p-3 bg-linear-to-r from-[#761be6]/65 to-[#761be6]">
-            {user.image ? (
+            {localImage ? (
               <Image
-                src={user.image} alt="Profile"
+                src={localImage} alt="Profile"
                 width={36} height={36}
-                className="rounded-full border-2 border-purple-200 hover:scale-105 hover:shadow-[0_2px_20px_rgba(118,27,230,0.2)] transition-all duration-200"
+                className="rounded-full border-2 border-purple-200 transition-all duration-200"
               />) : (
               <div className="w-9 h-9 rounded-full flex items-center justify-center 
                   bg-linear-to-r from-[#441851] to-[#761be6] 

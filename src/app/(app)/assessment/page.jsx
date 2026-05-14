@@ -7,6 +7,7 @@ import { IoMdClose } from "react-icons/io";
 import { BsBarChartFill } from "react-icons/bs";
 import { LuCircleCheckBig } from "react-icons/lu";
 import { useRouter } from "next/navigation";
+import { addNotification } from "@/lib/notification";
 
 
 export default function AssessmentPage() {
@@ -269,6 +270,19 @@ export default function AssessmentPage() {
         setFinalSubmit(false);
         return;
       }
+
+      // Assessment completion notification
+      addNotification({
+        title: "Assessment completed",
+        message: "You successfully completed the PDPL assessment",
+      });
+
+      // Report generated notification
+      addNotification({
+        title: "Report generated",
+        message: "Your compliance report is ready to view",
+        link: "/reports/history",
+      });
 
       toast.success("Assessment completed! Generating your report...", { autoClose: 1500 });
       router.push("/reports");
@@ -693,7 +707,7 @@ export default function AssessmentPage() {
                     <>
                       <p className="md:font-medium text-white flex items-center gap-2">
                         Submitting...
-                      <span className="shrink-0 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                        <span className="shrink-0 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
                       </p>
                     </>
                   ) : (

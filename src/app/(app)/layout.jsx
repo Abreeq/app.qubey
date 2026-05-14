@@ -13,24 +13,25 @@ export default function DashboardLayout({ children }) {
 
   const [collapsed, setCollapsed] = useState(true);
 
+  const [ready, setReady] = useState(false);
+
   useEffect(() => {
     if (status === "loading") return;
-
     if (status === "unauthenticated") {
       router.replace("/auth");
+      return;
     }
+    setReady(true);
   }, [status, router]);
 
-  // BLOCK EVERYTHING (no header/sidebar)
-  if (status === "loading" || status === "unauthenticated") {
-    return null;
-  }
+  if (!ready) return null;
+  if (status === "unauthenticated") return null;
 
   return (
     <>
       {/* Header  */}
       <Navbar />
-      
+
       <div className="flex custom-container">
         {/* Sidebar */}
         <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />

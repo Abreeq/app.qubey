@@ -484,7 +484,11 @@ export default function ProfilePage() {
       // Update the profile state so the new image shows immediately
       setProfile((prev) => ({ ...prev, image: data.imageUrl }));
 
-      await update({ image: data.imageUrl }); // refresh the NextAuth session too
+      window.dispatchEvent(new CustomEvent("avatar-updated", {
+        detail: { image: data.imageUrl }
+      }));
+
+      await update({ image: data.imageUrl });
 
     } catch (err) {
       setAvatarError("Something went wrong. Try again.");
@@ -519,7 +523,10 @@ export default function ProfilePage() {
       // Clear image from profile state → shows initials again
       setProfile((prev) => ({ ...prev, image: null }));
 
-      // Update session so navbar also clears the image
+      window.dispatchEvent(new CustomEvent("avatar-updated", {
+        detail: { image: null }
+      }));
+
       await update({ image: null });
 
     } catch (err) {
