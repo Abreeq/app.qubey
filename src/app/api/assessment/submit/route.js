@@ -6,7 +6,10 @@ import { generateWithAi } from "@/lib/generateWithAi";
 function safeJSON(text) {
   try {
     return JSON.parse(
-      (text || "").replace(/```json/g, "").replace(/```/g, "").trim()
+      (text || "")
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
+        .trim(),
     );
   } catch {
     return null;
@@ -16,7 +19,7 @@ function safeJSON(text) {
 export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -27,7 +30,7 @@ export async function POST(req) {
     if (!assessmentId) {
       return Response.json(
         { error: "assessmentId is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -70,10 +73,9 @@ export async function POST(req) {
       else openGaps += 1;
     }
 
-    const score = total === 0 ? 0 : ((gained / total) * 100);
+    const score = total === 0 ? 0 : (gained / total) * 100;
 
-    const riskLevel =
-      score >= 80 ? "Low" : score >= 50 ? "Medium" : "High";
+    const riskLevel = score >= 80 ? "Low" : score >= 50 ? "Medium" : "High";
 
     // ===========================
     // ✅ UPDATE ORGANIZATION STATS
@@ -161,8 +163,8 @@ ${JSON.stringify(weakQuestions, null, 2)}
     };
 
     try {
-      const response = await generateWithAi(prompt);  
-      const parsed = safeJSON(response.text);
+      const response = await generateWithAi(prompt);
+      const parsed = safeJSON(response);
 
       if (parsed?.summary) {
         report = {
@@ -203,80 +205,79 @@ ${JSON.stringify(weakQuestions, null, 2)}
 
     // Example risk generation (simple logic for V0)
 
-const risks = [];
+    const risks = [];
 
-for (const q of assessment.questions) {
-  const answer = q.answers[0]?.value;
+    for (const q of assessment.questions) {
+      const answer = q.answers[0]?.value;
 
-  if (answer === "NO") {
-    risks.push({
+      if (answer === "NO") {
+        risks.push({
+          organizationId: assessment.organizationId,
+          assessmentId,
+          title: q.text,
+          severity: "HIGH",
+          status: "OPEN",
+        });
+      }
+
+      if (answer === "PARTIAL") {
+        risks.push({
+          organizationId: assessment.organizationId,
+          assessmentId,
+          title: q.text,
+          severity: "MEDIUM",
+          status: "OPEN",
+        });
+      }
+    }
+
+    if (risks.length) {
+      await prisma.risk.createMany({ data: risks });
+    }
+
+    // --------------------
+    // Create actions (simple mapping for now)
+
+    const actions = risks.map((r) => ({
       organizationId: assessment.organizationId,
       assessmentId,
-      title: q.text,
-      severity: "HIGH",
-      status: "OPEN",
+      title: `${r.title}`,
+      description: "Implement required control to close this gap",
+      expectedIncrease: r.severity === "HIGH" ? 5 : 5 / 2,
+      status: "PENDING",
+    }));
+
+    if (actions.length) {
+      await prisma.complianceAction.createMany({ data: actions });
+    }
+
+    // --------------------
+    // Create or update snapshot
+
+    await prisma.complianceSnapshot.upsert({
+      where: { organizationId: assessment.organizationId },
+      update: {
+        assessmentId,
+        readinessScore: score,
+        riskLevel,
+        highRiskCount: risks.length,
+        actionsPending: actions.length,
+        actionsCompleted: 0,
+        scoreImprovement: 0,
+        lastAssessmentAt: new Date(),
+      },
+      create: {
+        organizationId: assessment.organizationId,
+        assessmentId,
+        readinessScore: score,
+        riskLevel,
+        highRiskCount: risks.length,
+        actionsPending: actions.length,
+        actionsCompleted: 0,
+        scoreImprovement: 0,
+        lastAssessmentAt: new Date(),
+      },
     });
-  }
-
-  if (answer === "PARTIAL") {
-    risks.push({
-      organizationId: assessment.organizationId,
-      assessmentId,
-      title: q.text,
-      severity: "MEDIUM",
-      status: "OPEN",
-    });
-  }
-}
-
-if (risks.length) {
-  await prisma.risk.createMany({ data: risks });
-}
-
-// --------------------
-// Create actions (simple mapping for now)
-
-const actions = risks.map((r) => ({
-  organizationId: assessment.organizationId,
-  assessmentId,
-  title: `${r.title}`,
-  description: "Implement required control to close this gap",
-  expectedIncrease: r.severity === "HIGH" ? 5 : 5/2,
-  status: "PENDING",
-}));
-
-if (actions.length) {
-  await prisma.complianceAction.createMany({ data: actions });
-}
-
-// --------------------
-// Create or update snapshot
-
-await prisma.complianceSnapshot.upsert({
-  where: { organizationId: assessment.organizationId },
-  update: {
-    assessmentId,
-    readinessScore: score,
-    riskLevel,
-    highRiskCount:risks.length,
-    actionsPending: actions.length,
-    actionsCompleted: 0,
-    scoreImprovement: 0,
-    lastAssessmentAt: new Date(),
-  },
-  create: {
-    organizationId: assessment.organizationId,
-    assessmentId,
-    readinessScore: score,
-    riskLevel,
-    highRiskCount:risks.length,
-    actionsPending: actions.length,
-    actionsCompleted: 0,
-    scoreImprovement: 0,
-    lastAssessmentAt: new Date(),
-  },
-});
-
 
     return Response.json({
       success: true,
@@ -288,7 +289,7 @@ await prisma.complianceSnapshot.upsert({
     console.error(err);
     return Response.json(
       { error: "Something went wrong", details: String(err?.message || err) },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
