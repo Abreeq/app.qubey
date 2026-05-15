@@ -9,14 +9,21 @@ import { signIn, useSession } from "next-auth/react";
 import ProfileDropdown from "./ProfileDropdown";
 import { LuCrown, LuSearch } from "react-icons/lu";
 import { VscBell } from "react-icons/vsc";
+import { MdDelete } from "react-icons/md";
+
 import Breadcrumb from "./Breadcrumb";
+import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, } from "@/lib/notification";
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
+  const router = useRouter();
 
   const [open, setOpen] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [showAllNotifications, setShowAllNotifications] = useState(false);
 
   const [actions, setActions] = useState([]); // for all actions
   const [query, setQuery] = useState("");
@@ -34,6 +41,61 @@ export default function Navbar() {
   // For dropdown
   const upgradeRef = useRef(null);
   const notificationRef = useRef(null);
+
+  useEffect(() => {
+    const loadNotifications = () => {
+      const data = getNotifications();
+      setNotifications(data);
+    };
+
+    loadNotifications();
+
+    window.addEventListener("notificationsUpdated", loadNotifications);
+
+    return () => {
+      window.removeEventListener(
+        "notificationsUpdated",
+        loadNotifications
+      );
+    };
+  }, []);
+
+  const unreadCount = notifications.filter(
+    (item) => !item.isRead
+  ).length;
+
+  const displayedNotifications = showAllNotifications ? notifications : notifications.slice(0, 3);
+
+  const handleNotificationClick = (notification) => {
+    markNotificationAsRead(notification.id);
+
+    setNotificationOpen(false);
+
+    if (notification.link) {
+      router.push(notification.link);
+    }
+  };
+
+  const markAllAsRead = () => {
+    markAllNotificationsAsRead();
+  };
+
+  const formatTime = (date) => {
+    const now = new Date();
+    const created = new Date(date);
+
+    const diff = Math.floor((now - created) / 1000);
+
+    if (diff < 60) return `${diff}s ago`;
+
+    if (diff < 3600)
+      return `${Math.floor(diff / 60)}m ago`;
+
+    if (diff < 86400)
+      return `${Math.floor(diff / 3600)}h ago`;
+
+    return `${Math.floor(diff / 86400)}d ago`;
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -159,14 +221,14 @@ export default function Navbar() {
                       <div className="px-4 py-3 text-sm text-gray-500">
                         Loading...
                       </div>
-                      ) : results.length > 0 ? (
+                    ) : results.length > 0 ? (
                       <>
                         {results.map((item) => (
                           <div key={item.id} onClick={() => {
-                              setShowResults(false);
-                              setQuery("");
-                              window.location.href = `/actions/${item.id}`;
-                            }}
+                            setShowResults(false);
+                            setQuery("");
+                            window.location.href = `/actions/${item.id}`;
+                          }}
                             className="px-2 py-2 rounded-md hover:bg-purple-50 cursor-pointer"
                           >
                             <p className="text-sm font-medium text-gray-800 line-clamp-1">
@@ -191,7 +253,9 @@ export default function Navbar() {
               <div ref={notificationRef} className="relative">
                 <div ref={notifRef} onClick={() => setNotificationOpen(!notificationOpen)} className="relative cursor-pointer" >
                   <VscBell className="shrink-0 text-xl" />
-                  <span className="absolute top-0 right-0 size-2 rounded-full bg-red-500"></span>
+                  {unreadCount > 0 && (
+                    <span className="absolute top-0 right-0 size-2 rounded-full bg-red-500"></span>
+                  )}
                 </div>
 
                 {notificationOpen && (
@@ -199,7 +263,7 @@ export default function Navbar() {
                     {/* Header */}
                     <div className="flex items-center justify-between px-3 py-2">
                       <h3 className="font-semibold text-base sm:text-lg bg-linear-to-r from-[#761be6] to-[#441851] bg-clip-text text-transparent">Notifications</h3>
-                      <button className="cursor-pointer text-sm text-purple-700 hover:underline">
+                      <button onClick={markAllAsRead} className="cursor-pointer text-sm text-purple-700 hover:underline">
                         Mark all as read
                       </button>
                     </div>
@@ -208,56 +272,60 @@ export default function Navbar() {
 
                     {/* Notifications List */}
                     <div className="max-h-80 overflow-y-auto">
-                      {/* Item */}
-                      <div className="px-4 py-2 hover:bg-purple-100 rounded-lg cursor-pointer flex justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-800">
-                            New compliance risk detected
-                          </p>
-                          <p className="text-xs text-gray-600">
-                            Critical gap found in Access Control
-                          </p>
-                          <span className="text-xs text-gray-500">5 min ago</span>
+                      {notifications.length === 0 ? (
+                        <div className="px-4 py-3 font-medium text-sm text-gray-800">
+                          No Notifications
                         </div>
-                        <span className="mt-1 size-2 bg-purple-700 rounded-full"></span>
-                      </div>
+                      ) : (
+                        displayedNotifications.map((item, index) => (
+                          <div key={index} onClick={() => handleNotificationClick(item)}
+                            className="px-4 py-3 hover:bg-purple-100 hover:rounded-lg border-b hover:border-0 border-purple-300 cursor-pointer flex justify-between"
+                          >
+                            <div>
+                              <p className="text-sm font-medium text-gray-800">
+                                {item.title}
+                              </p>
 
-                      {/* Item */}
-                      <div className="px-4 py-2 hover:bg-purple-100 rounded-lg cursor-pointer flex justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-800">
-                            Assessment completed
-                          </p>
-                          <p className="text-xs text-gray-600">
-                            PDPL assessment has been completed
-                          </p>
-                          <span className="text-xs text-gray-500">1 hour ago</span>
-                        </div>
-                        <span className="mt-1 size-2 bg-purple-700 rounded-full"></span>
-                      </div>
+                              <p className="text-xs text-gray-600">
+                                {item.message}
+                              </p>
 
-                      {/* Item */}
-                      <div className="px-4 py-2 hover:bg-purple-100 rounded-lg cursor-pointer flex justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-800">
-                            Report generated
-                          </p>
-                          <p className="text-xs text-gray-600">
-                            Monthly compliance report is ready
-                          </p>
-                          <span className="text-xs text-gray-500">2 hours ago</span>
-                        </div>
-                        <span className="mt-1 size-2 bg-purple-700 rounded-full"></span>
-                      </div>
+                              <span className="text-xs text-gray-500">
+                                {formatTime(item.createdAt)}
+                              </span>
+                            </div>
+
+                            <div className="flex flex-col justify-between items-center gap-2">
+                              {!item.isRead && (
+                                <span className="mt-1 size-2 bg-purple-700 rounded-full"></span>
+                              )}
+                              <span onClick={(e) => {
+                                e.stopPropagation(); // prevent opening notification
+                                deleteNotification(item.id);
+                              }}><MdDelete className="text-red-500 hover:text-red-600 hover:scale-125 transition size-5" /></span>
+                            </div>
+
+                          </div>
+                        ))
+                      )}
                     </div>
 
-                    <div className="border-b border-purple-300 my-2"></div>
                     {/* Footer */}
-                    <button className="cursor-pointer w-full rounded-lg bg-linear-to-r from-[#441851] to-[#761be6] 
-                          px-2 md:px-4 py-2 hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition">
-                      <span className="md:font-medium text-white">View all notifications</span>
-                    </button>
-
+                    {notifications.length > 3 && (
+                      <button
+                        onClick={() =>
+                          setShowAllNotifications(!showAllNotifications)
+                        }
+                        className="cursor-pointer w-full mt-2 rounded-lg bg-linear-to-r from-[#441851] to-[#761be6]
+                        px-2 md:px-4 py-2 hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition"
+                      >
+                        <span className="md:font-medium text-white">
+                          {showAllNotifications
+                            ? "Show less"
+                            : "View all notifications"}
+                        </span>
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -393,7 +461,14 @@ export default function Navbar() {
 
               {/* Profile */}
               <div ref={profileRef}>
-                {status === "loading" ? null : session?.user ? (
+                {status === "loading" ? (
+                  // Show spinner
+                  <div className="w-9 h-9 rounded-full bg-purple-50 border border-purple-200 
+                    flex items-center justify-center">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 
+                    border-purple-600 border-t-transparent" />
+                  </div>
+                ) : session?.user ? (
                   <ProfileDropdown user={session.user} />
                 ) : (
                   <button onClick={() => signIn()}
@@ -447,7 +522,14 @@ export default function Navbar() {
 
               {/* Profile / Auth */}
               <div className="pt-2 border-t">
-                {status === "loading" ? null : session?.user ? (
+                {status === (
+                  // Show spinner
+                  <div className="w-8 h-8 rounded-full bg-purple-50 border border-purple-200 
+                    flex items-center justify-center">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 
+                    border-purple-600 border-t-transparent" />
+                  </div>
+                ) ? null : session?.user ? (
                   <ProfileDropdown user={session.user} />
                 ) : (
                   <button
@@ -465,109 +547,3 @@ export default function Navbar() {
     </>
   );
 }
-
-
-// Previous header
-// {/* <header className="sticky top-0 z-50 w-full border-b border-black/10 shadow-sm bg-white">
-//   <div className="custom-container flex h-18 items-center justify-between">
-
-//     {/* Logo */}
-//     <Link ref={logoRef} href="https://staging.qubey.ae/" className="text-2xl font-bold uppercase w-60">
-//       <img src="/logo.png" alt="Qubey Logo" className='h-8 sm:h-12 w-auto object-contain' />
-//     </Link>
-
-//     {/* Desktop Nav */}
-//     <nav className="hidden lg:flex items-center gap-4.5 font-medium">
-//       {navLinks.map(({ href, label }, index) => (
-
-//         <Link key={label} href={href}
-//           ref={(el) => (menuRef.current[index] = el)}
-//           className="group relative font-medium flex items-center gap-1.5">
-//           <span className="text-[rgb(var(--light-purple))] font-semibold opacity-0 -translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0">
-//             [
-//           </span>
-//           <span>{label}</span>
-//           <span className="text-[rgb(var(--light-purple))] font-semibold opacity-0 translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0">
-//             ]
-//           </span>
-//         </Link>
-
-//       ))}
-//     </nav>
-
-//     {/* Desktop Actions */}
-//     <div ref={ctaRef} className="hidden lg:flex items-center gap-4">
-//       <button className="cursor-pointer rounded-lg bg-slate-100/80 border border-purple-300
-//              hover:bg-[#761be6] hover:text-white hover:scale-95 px-3 py-1.5 flex items-center gap-2 transition-all duration-300">
-//         <LuCrown className="shrink-0" />
-//         <span className="text-sm font-medium">Upgrade</span>
-//       </button>
-
-//       <button className="cursor-pointer rounded-lg bg-yellow-200/80 border border-yellow-600
-//             hover:scale-95 px-3 py-1.5 flex items-center gap-2 transition-all duration-300">
-//         <LuCrown className="shrink-0 text-yellow-600" />
-//         <span className="text-sm font-medium">Pro</span>
-//       </button>
-//       {
-//         status === "loading" ? null : session?.user ? (
-//           <ProfileDropdown user={session.user} />
-//         ) : (
-
-//           <button
-//             onClick={() => signIn()}
-//             className="cursor-pointer rounded-lg bg-linear-to-r from-[#441851] to-[#761be6] px-4 py-2 font-semibold text-white  hover:from-[#5e1dbf] hover:to-[#8b2bf0] transition"
-//           >
-//             Sign in
-//           </button>
-//         )
-//       }
-//     </div>
-
-//     {/* Mobile Hamburger */}
-//     <button
-//       className="lg:hidden text-2xl hover:text-[rgb(var(--brand-black))]/85 p-2 rounded-lg transition-colors"
-//       onClick={() => setOpen(!open)}
-//       aria-label="Toggle menu"
-//     >
-//       {open ? "✕" : <RiMenu3Fill />}
-//     </button>
-//   </div>
-
-//   {/* Mobile Menu */}
-//   {open && (
-//     <div className="lg:hidden border-t border-black/20 bg-white">
-//       <div className="flex flex-col px-6 py-6 space-y-3 font-medium text-center">
-//         {navLinks.map(({ href, label }) => (
-//           <Link
-//             key={label}
-//             href={href}
-//             className="sm:text-lg"
-//             onClick={(e) => {
-//               setOpen(!open);
-//             }}
-//           >
-//             {label}
-//           </Link>
-//         ))}
-
-
-//         {/* Mobile CTA */}
-//         <div className="flex flex-col gap-3">
-//           {
-//             status === "loading" ? null : session?.user ? (
-//               <ProfileDropdown user={session.user} />
-//             ) : (
-
-//               <button
-//                 onClick={() => signIn()}
-//                 className="cursor-pointer rounded-lg bg-linear-to-r from-[#441851] to-[#761be6] px-4 py-2 text-center text-white font-semibold"
-//               >
-//                 Sign in
-//               </button>
-//             )
-//           }
-//         </div>
-//       </div>
-//     </div>
-//   )}
-// </header> */}

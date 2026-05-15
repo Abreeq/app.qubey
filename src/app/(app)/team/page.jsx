@@ -7,6 +7,7 @@ import { RxCrossCircled } from "react-icons/rx";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { addNotification } from "@/lib/notification";
 
 
 export default function TeamPage() {
@@ -147,6 +148,13 @@ export default function TeamPage() {
 
       //update UI instantly
       await loadTeamData();
+      
+      // For Notification
+      addNotification({
+        title: "New team member added",
+        message: `${userEmail} has been added successfully`,
+        link: "/team",
+      });
 
       setAddLoading(false);
 
@@ -198,6 +206,15 @@ export default function TeamPage() {
 
       await loadTeamData();
 
+      // To get the Name
+      const member = members.find((u) => u.id === userId);
+
+      addNotification({
+        title: "Access removed",
+        message: `${member?.name || "Team member"} access was removed`,
+        link: "/team",
+      });
+
     } catch (err) {
       setActionError({
         userId,
@@ -245,6 +262,15 @@ export default function TeamPage() {
       }
 
       await loadTeamData();
+
+      // To get the Name
+      const member = members.find((u) => u.id === userId);
+
+      addNotification({
+        title: "Access restored",
+        message: `${member?.name || "Team member"} access was restored`,
+        link: "/team",
+      });
 
     } catch (err) {
       setActionError({
